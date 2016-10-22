@@ -17,7 +17,6 @@
   },
   "homepage": "https://github.com/omni-resources/civ6-save-parser#readme",
   "dependencies": {
-    "lodash": "^4.16.4",
     "minimist": "^1.2.0"
   }
 }

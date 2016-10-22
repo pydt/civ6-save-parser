@@ -1,21 +1,18 @@
 'use strict';
 
-const _ = require('lodash');
 const fs = require('fs');
 const util = require('util');
 
+const GAME_TURN = new Buffer([0x9D, 0x2C, 0xE6, 0xBD]);
 const START_PLAYER = new Buffer([0xBB, 0x63, 0xE3, 0x4F]);
+const PLAYER_CIV = new Buffer([0x2F, 0x5C, 0x5E, 0x9D]);
 const PLAYER_PASSWORD = new Buffer([0x6C, 0xD1, 0x7C, 0x6E]);
 const PLAYER_NAME = new Buffer([0xFD, 0x6B, 0xB9, 0xDA]);
 const PLAYER_CURRENT_TURN = new Buffer([0xCB, 0x21, 0xB0, 0x7A]);
 const END_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 
 (() => {
-  module.exports.parse = (filename, options) => {
-    options = _.defaults(options, {
-      allKeys: false
-    });
-
+  module.exports.parse = (filename) => {
     const data = fs.readFileSync(filename);
     const result = {
       players: []
@@ -26,7 +23,12 @@ const END_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
     let state;
 
     while (null !== (state = scan(buffer, state))) {
-      if (state.last4.equals(START_PLAYER)) {
+      if (state.last4.equals(GAME_TURN)) {
+        result.gameTurn = {
+          pos: state.pos,
+          data: readInt(buffer, state)
+        }
+      } else if (state.last4.equals(START_PLAYER)) {
         result.players.push({
           pos: state.pos,
           data: readPlayer(buffer, state)
@@ -42,7 +44,7 @@ const END_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
     if (!argv._.length) {
       console.log('Please pass the filename as the argument to the script.');
     } else {
-      console.log(util.inspect(module.exports.parse(argv._[0], argv), false, null));
+      console.log(util.inspect(module.exports.parse(argv._[0]), false, null));
     }
   }
 })();
@@ -87,6 +89,11 @@ function readPlayer(buffer, state) {
         pos: state.pos,
         value: readBoolean(buffer, state)
       };
+    } else if (state.last4.equals(PLAYER_CIV)) {
+      result.civ = {
+        pos: state.pos,
+        value: readString(buffer, state)
+      }
     }
   }
 
@@ -106,6 +113,8 @@ function readString(buffer, state) {
       result = buffer.slice(state.pos, state.pos + strLen - 1).toString(); // Ignore null terminator
       state.pos += strLen;
     }
+  } else {
+    console.log('Error reading string', state);
   }
 
   return result;
@@ -117,36 +126,22 @@ function readBoolean(buffer, state) {
   if (buffer.readUInt32LE(state.pos) === 1) {
     state.pos += 12;
     return !!buffer[state.pos];
+  } else {
+    console.log('Error reading boolean', state);
   }
 
   return result;
 }
 
-function getChunk(buffer, startIndex) {
-  const stringDelimiter = new Buffer([5, 0, 0, 0]);
+function readInt(buffer, state) {
+  let result = null;
 
-  const result = {
-    startIndex: buffer.indexOf(stringDelimiter, startIndex)
-  };
-
-  if (result.startIndex > 0) {
-    const strLen = buffer.readUInt16LE(result.startIndex + 4);
-
-    if (buffer.indexOf(new Buffer([0, 0x21, 1, 0, 0, 0]), result.startIndex) === result.startIndex + 6) {
-      result.rawKey = buffer.readUInt32LE(result.startIndex - 4);
-
-      if (CHUNK_KEYS[result.rawKey]) {
-        result.key = CHUNK_KEYS[result.rawKey];
-      }
-
-      result.endIndex = result.startIndex + 12 + strLen;
-      result.data = buffer.slice(result.startIndex + 12, result.endIndex).toString();
-    } else {
-      result.endIndex = result.startIndex + 4;
-    }
-
-    return result;
+  if (buffer.readUInt32LE(state.pos) === 2) {
+    state.pos += 12;
+    return buffer.readUInt32LE(state.pos);
+  } else {
+    console.log('Error reading int', state);
   }
 
-  return null;
+  return result;
 }
