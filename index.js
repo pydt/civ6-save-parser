@@ -100,6 +100,27 @@ module.exports.parse = (buffer, options) => {
   return result;
 };
 
+module.exports.modifyCiv = (buffer, civData, newValues) => {
+  for (let key in newValues) {
+    if (!civData.data[key]) {
+      throw new Error('Adding a value that doesn\'t exist isn\'t supported yet.');
+    }
+
+    const civValue = civData.data[key];
+
+    switch (civValue.type) {
+      case 5:
+        buffer = modifyString(buffer, civValue, newValues[key]);
+        break;
+
+      default:
+        throw new Error('I don\'t know how to modify type ' + civValue.type);
+    }
+  }
+
+  return buffer;
+};
+
 if (!module.parent) {
   var argv = require('minimist')(process.argv.slice(2));
   if (!argv._.length) {
@@ -111,7 +132,7 @@ if (!module.parent) {
   }
 }
 
-// Parse helper functions
+// Helper functions
 
 function simplify(result) {
   let mapFn = _.mapValues;
@@ -247,6 +268,22 @@ function readString(buffer, state) {
   }
 
   return result;
+}
+
+function modifyString(buffer, curValueData, newValue) {
+  // Chop current buffer after the type...
+  let resultBuffer = buffer.slice(0, curValueData.pos + 8);
+
+  // Append new string length...
+  const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
+  strLenBuffer.writeUInt16LE(newValue.length + 1, 0);
+  resultBuffer = Buffer.concat([resultBuffer, strLenBuffer]);
+
+  // Append new string...
+  resultBuffer = Buffer.concat([resultBuffer, Buffer.from(newValue), new Buffer([0])]);
+
+  // Append remainder of original buffer
+  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 8 + 8 + curValueData.data.length + 1)]);
 }
 
 function readUtfString(buffer, state) {
