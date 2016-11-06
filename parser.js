@@ -6,8 +6,7 @@ const path = require('path');
 const util = require('util');
 const zlib = require('zlib');
 
-const START_PLAYER = new Buffer([0x31, 0xEB, 0x88, 0x62]);
-const END_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
+const START_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
 const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
 
@@ -21,7 +20,8 @@ const PLAYER_DATA = {
   PLAYER_CIV_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
   PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
   PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
-  PLAYER_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A])
+  PLAYER_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
+  PLAYER_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
 };
 
 
@@ -44,6 +44,14 @@ module.exports.parse = (filename, options) => {
   }
 
   do {
+    if (state.next4.equals(END_UNCOMPRESSED)) {
+      if (options.outputCompressed) {
+        readCompressedData(buffer, state, path.basename(filename) + '.bin');
+      }
+
+      break;
+    }
+
     const info = parseEntry(buffer, state);
 
     for (let key in GAME_DATA) {
@@ -57,14 +65,6 @@ module.exports.parse = (filename, options) => {
         pos: state.pos,
         data: readPlayer(info, buffer, state)
       });
-    }
-
-    if (state.next4.equals(END_UNCOMPRESSED)) {
-      if (options.outputCompressed) {
-        readCompressedData(buffer, state, path.basename(filename) + '.bin');
-      }
-
-      break;
     }
   } while (null !== (state = readState(buffer, state)));
 
@@ -178,22 +178,18 @@ function readPlayer(info, buffer, state) {
   const result = {};
 
   do {
-    if (state.next4.equals(END_UNCOMPRESSED)) {
-      break;
-    }
-
     if (info === null) {
       info = parseEntry(buffer, state);
-    }
-
-    if (info.marker.equals(END_PLAYER)) {
-      break;
     }
 
     for (let key in PLAYER_DATA) {
       if (info.marker.equals(PLAYER_DATA[key])) {
         result[key] = info;
       }
+    }
+
+    if (info.marker.equals(PLAYER_DATA.PLAYER_DESCRIPTION)) {
+      break;
     }
 
     info = null;
