@@ -6,7 +6,7 @@ const path = require('path');
 const util = require('util');
 const zlib = require('zlib');
 
-const START_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
+const START_ACTOR = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
 const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
 
@@ -15,21 +15,35 @@ const GAME_DATA = {
   GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05])
 };
 
-const PLAYER_DATA = {
-  PLAYER_CIV: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
-  PLAYER_CIV_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
-  PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
+const ACTOR_DATA = {
+  ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
+  ACTOR_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
   PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
-  PLAYER_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
-  PLAYER_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
+  PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
+  IS_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
+  ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
 };
+
+// WHAT IS THE METHOD TO THIS MADNESS!?!?!?!
+const CIV_SLOTS = {
+  2: [2, 1],
+  3: [2, 1, 3],
+  4: [2, 1, 3, 4],
+  5: [2, 5, 1, 3, 4],
+  6: [2, 6, 5, 1, 3, 4],
+  7: [2, 6, 5, 1, 3, 7, 4],
+  8: [2, 6, 5, 1, 3, 7, 8, 4],
+  9: [2, 6, 5, 1, 9, 3, 7, 8, 4],
+  10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4]
+}
 
 
 module.exports.parse = (filename, options) => {
   options = options || {};
   const data = fs.readFileSync(filename);
   const result = {
-    PLAYERS: []
+    ACTORS: [],
+    CIVS: []
   };
 
   const buffer = new Buffer(data);
@@ -60,13 +74,30 @@ module.exports.parse = (filename, options) => {
       }
     }
 
-    if (info.marker.equals(START_PLAYER)) {
-      result.PLAYERS.push({
+    if (info.marker.equals(START_ACTOR)) {
+      result.ACTORS.push({
         pos: state.pos,
-        data: readPlayer(info, buffer, state)
+        data: readActor(info, buffer, state)
       });
     }
   } while (null !== (state = readState(buffer, state)));
+
+  let fullCivs = [];
+
+  for (let actor of _.clone(result.ACTORS)) {
+    if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
+      fullCivs.push(actor);
+      _.pull(result.ACTORS, actor);
+    }
+  }
+
+  for (let i = 0; i < fullCivs.length; i++) {
+    result.CIVS[CIV_SLOTS[fullCivs.length][i] - 1] = fullCivs[i];
+  }
+
+  if (options.simple) {
+    return simplify(result);
+  }
 
   return result;
 };
@@ -77,11 +108,7 @@ if (!module.parent) {
     console.log('Please pass the filename as the argument to the script.');
   } else {
     const result = module.exports.parse(argv._[0], argv);
-    if (argv.simple) {
-      console.log(util.inspect(simplify(result), false, null));
-    } else {
-      console.log(util.inspect(result, false, null));
-    }
+    console.log(util.inspect(result, false, null));
   }
 }
 
@@ -174,7 +201,7 @@ function parseEntry(buffer, state) {
   return result;
 }
 
-function readPlayer(info, buffer, state) {
+function readActor(info, buffer, state) {
   const result = {};
 
   do {
@@ -182,13 +209,13 @@ function readPlayer(info, buffer, state) {
       info = parseEntry(buffer, state);
     }
 
-    for (let key in PLAYER_DATA) {
-      if (info.marker.equals(PLAYER_DATA[key])) {
+    for (let key in ACTOR_DATA) {
+      if (info.marker.equals(ACTOR_DATA[key])) {
         result[key] = info;
       }
     }
 
-    if (info.marker.equals(PLAYER_DATA.PLAYER_DESCRIPTION)) {
+    if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
       break;
     }
 
