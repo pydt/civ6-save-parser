@@ -6,24 +6,30 @@ const path = require('path');
 const util = require('util');
 const zlib = require('zlib');
 
-const GAME_TURN = new Buffer([0x9D, 0x2C, 0xE6, 0xBD]);
-const GAME_SPEED = new Buffer([0x99, 0xB0, 0xD9, 0x05]);
 const START_PLAYER = new Buffer([0x31, 0xEB, 0x88, 0x62]);
-const PLAYER_CIV = new Buffer([0x2F, 0x5C, 0x5E, 0x9D]);
-const PLAYER_CIV_TYPE = new Buffer([0xBE, 0xAB, 0x55, 0xCA]);
-const PLAYER_PASSWORD = new Buffer([0x6C, 0xD1, 0x7C, 0x6E]);
-const PLAYER_NAME = new Buffer([0xFD, 0x6B, 0xB9, 0xDA]);
-const PLAYER_CURRENT_TURN = new Buffer([0xCB, 0x21, 0xB0, 0x7A]);
 const END_PLAYER = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
-const COMPRESSED_DATA_START = new Buffer([1, 0, 0x78, 0x9C]);
 const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
+
+const GAME_DATA = {
+  GAME_TURN: new Buffer([0x9D, 0x2C, 0xE6, 0xBD]),
+  GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05])
+};
+
+const PLAYER_DATA = {
+  PLAYER_CIV: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
+  PLAYER_CIV_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
+  PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
+  PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
+  PLAYER_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A])
+};
+
 
 module.exports.parse = (filename, options) => {
   options = options || {};
   const data = fs.readFileSync(filename);
   const result = {
-    players: []
+    PLAYERS: []
   };
 
   const buffer = new Buffer(data);
@@ -31,7 +37,7 @@ module.exports.parse = (filename, options) => {
   let state;
 
   while (null !== (state = readState(buffer, state))) {
-    if (state.next4.equals(GAME_SPEED)) {
+    if (state.next4.equals(GAME_DATA.GAME_SPEED)) {
       break;
     }
     state.pos++;
@@ -40,10 +46,14 @@ module.exports.parse = (filename, options) => {
   do {
     const info = parseEntry(buffer, state);
 
-    if (info.marker.equals(GAME_TURN)) {
-      result.gameTurn = info;
-    } else if (info.marker.equals(START_PLAYER)) {
-      result.players.push({
+    for (let key in GAME_DATA) {
+      if (info.marker.equals(GAME_DATA[key])) {
+        result[key] = info;
+      }
+    }
+
+    if (info.marker.equals(START_PLAYER)) {
+      result.PLAYERS.push({
         pos: state.pos,
         data: readPlayer(info, buffer, state)
       });
@@ -180,16 +190,10 @@ function readPlayer(info, buffer, state) {
       break;
     }
 
-    if (info.marker.equals(PLAYER_PASSWORD)) {
-      result.password = info;
-    } else if (info.marker.equals(PLAYER_NAME)) {
-      result.name = info;
-    } else if (info.marker.equals(PLAYER_CURRENT_TURN)) {
-      result.isCurrentTurn = info;
-    } else if (info.marker.equals(PLAYER_CIV)) {
-      result.civ = info;
-    } else if (info.marker.equals(PLAYER_CIV_TYPE)) {
-      result.civType = info;
+    for (let key in PLAYER_DATA) {
+      if (info.marker.equals(PLAYER_DATA[key])) {
+        result[key] = info;
+      }
     }
 
     info = null;
