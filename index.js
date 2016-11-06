@@ -35,18 +35,16 @@ const CIV_SLOTS = {
   8: [2, 6, 5, 1, 3, 7, 8, 4],
   9: [2, 6, 5, 1, 9, 3, 7, 8, 4],
   10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4]
-}
+};
 
 
-module.exports.parse = (filename, options) => {
+module.exports.parse = (buffer, options) => {
   options = options || {};
-  const data = fs.readFileSync(filename);
+
   const result = {
     ACTORS: [],
     CIVS: []
   };
-
-  const buffer = new Buffer(data);
 
   let state;
 
@@ -107,7 +105,8 @@ if (!module.parent) {
   if (!argv._.length) {
     console.log('Please pass the filename as the argument to the script.');
   } else {
-    const result = module.exports.parse(argv._[0], argv);
+    const buffer = new Buffer(fs.readFileSync(argv._[0]));
+    const result = module.exports.parse(buffer, argv);
     console.log(util.inspect(result, false, null));
   }
 }
