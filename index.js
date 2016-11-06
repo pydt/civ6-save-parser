@@ -21,6 +21,7 @@ const ACTOR_DATA = {
   PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
   PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
   IS_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
+  ACTOR_AI_HUMAN: new Buffer([0x95, 0xB9, 0x42, 0xCE]),  // 3 = Human, 1 = AI
   ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
 };
 
@@ -109,6 +110,10 @@ module.exports.modifyCiv = (buffer, civData, newValues) => {
     const civValue = civData.data[key];
 
     switch (civValue.type) {
+      case 2:
+        buffer = modifyInt(buffer, civValue, newValues[key]);
+        break;
+
       case 5:
         buffer = modifyString(buffer, civValue, newValues[key]);
         break;
@@ -318,6 +323,19 @@ function readInt(buffer, state) {
   const result = buffer.readUInt32LE(state.pos);
   state.pos += 4;
   return result;
+}
+
+function modifyInt(buffer, curValueData, newValue) {
+  // Chop current buffer after the type and padding...
+  let resultBuffer = buffer.slice(0, curValueData.pos + 16);
+
+  // Append new integer value...
+  const valueBuffer = Buffer.alloc(4);
+  valueBuffer.writeUInt16LE(newValue);
+  resultBuffer = Buffer.concat([resultBuffer, valueBuffer]);
+
+  // Append remainder of original buffer
+  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 20)]);
 }
 
 function readCompressedData(buffer, state, filename) {
