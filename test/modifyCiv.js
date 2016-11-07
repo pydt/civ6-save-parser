@@ -19,7 +19,7 @@ describe('Modify Cathy Save', function() {
 
   it('should be able to change a human player to AI', () => {
     buffer = civ6.modifyCiv(buffer, parsed.CIVS[0], { ACTOR_AI_HUMAN: 1 });
-    fs.writeFileSync('test/saves/modified.Civ6Save', buffer);
+    //fs.writeFileSync('test/saves/modified.Civ6Save', buffer);
 
     const reparse = civ6.parse(buffer);
 
