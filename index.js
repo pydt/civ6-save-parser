@@ -195,9 +195,18 @@ function parseEntry(buffer, state) {
 
       case 3:
       case 0x0A:
-      case 0x15:
         result.data = 'UNKNOWN!';
         state.pos += 12;
+        break;
+
+      case 0x15:
+        result.data = 'UNKNOWN!';
+
+        if (buffer.slice(state.pos, state.pos + 4).equals(new Buffer([0, 0, 0, 0x80]))) {
+          state.pos += 20;
+        } else {
+          state.pos += 12;
+        }
         break;
 
       case 5:

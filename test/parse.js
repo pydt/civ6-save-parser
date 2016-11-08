@@ -4,7 +4,7 @@ const fs = require('fs');
 const expect = require('chai').expect;
 const civ6 = require('../index.js');
 
-describe('Parse Cathy Save', function() {
+describe('Parse Cathy Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
   const parsed = civ6.parse(buffer);
   const parsedSimple = civ6.parse(buffer, { simple: true });
@@ -39,5 +39,16 @@ describe('Parse Cathy Save', function() {
       expect(parsed.CIVS[i].data.PLAYER_NAME.data).to.equal('Player ' + (i + 1));
       expect(parsedSimple.CIVS[i].PLAYER_NAME).to.equal('Player ' + (i + 1));
     }
+  });
+});
+
+describe('Parse Hojo Save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/HŌJŌ TOKIMUNE 341 1920 d. C..Civ6Save'));
+  const parsed = civ6.parse(buffer);
+  const parsedSimple = civ6.parse(buffer, { simple: true });
+
+  it('should have 6 civs', () => {
+    expect(parsed.CIVS.length).to.equal(6);
+    expect(parsedSimple.CIVS.length).to.equal(6);
   });
 });
