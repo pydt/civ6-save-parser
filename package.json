@@ -1,6 +1,6 @@
 {
   "name": "civ6-save-parser",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Parses Civilization VI Save Files.",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/omni-resources/civ6-save-parser#readme",
   "dependencies": {
+    "buffer-v6-polyfill": "^1.0.3",
     "lodash": "^4.16.6",
     "minimist": "^1.2.0"
   },
