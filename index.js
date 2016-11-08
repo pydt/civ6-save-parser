@@ -346,7 +346,7 @@ function modifyInt(buffer, curValueData, newValue) {
 
   // Append new integer value...
   const valueBuffer = Buffer.alloc(4);
-  valueBuffer.writeUInt16LE(newValue);
+  valueBuffer.writeUInt32LE(newValue);
   resultBuffer = Buffer.concat([resultBuffer, valueBuffer]);
 
   // Append remainder of original buffer
