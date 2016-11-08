@@ -151,6 +151,10 @@ function simplify(result) {
       return i.data;
     }
 
+    if (i.data === false) {
+      return false;
+    }
+
     return simplify(i.data || i);
   });
 }
