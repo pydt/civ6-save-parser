@@ -49,7 +49,11 @@ module.exports.parse = (buffer, options) => {
     CIVS: []
   };
 
-  let state;
+  let state = readState(buffer);
+
+  if (state.next4.toString() !== 'CIV6') {
+    throw new Error('Not a Civilzation 6 save file. :(');
+  }
 
   while (null !== (state = readState(buffer, state))) {
     if (state.next4.equals(GAME_DATA.GAME_SPEED)) {
