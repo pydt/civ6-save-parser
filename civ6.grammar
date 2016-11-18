@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ufwb version="1.17">
+    <grammar name="CIV6SAVE grammar" start="id:1" author="github.com/carbonrobot" fileextension="Civ6Save">
+        <description>Grammar for CIV6SAVE files</description>
+        <structure name="CIV6SAVE file" id="1" encoding="UTF-8" endian="little" signed="no">
+            <string name="FileSignature" id="3" type="fixed-length" length="4" encoding="UTF-8"/>
+            <binary name="&lt;Binary Fill Bytes&gt;" id="4" unused="yes" length="560"/>
+            <number name="GameTurn" id="5" fillcolor="55AAFF" type="integer" length="4"/>
+            <binary name="&lt;Binary Fill Bytes-1&gt;" id="10" unused="yes" length="562"/>
+            <structure name="Player" id="9" length="1399" fillcolor="55AA00">
+                <binary name="&lt;Binary Fill Bytes&gt;" id="13" unused="yes" length="122"/>
+                <structure name="Password" id="12" length="21">
+                    <binary name="&lt;Binary Fill Bytes&gt;" id="15" unused="yes" length="8"/>
+                    <number name="Length" id="17" fillcolor="55FFFF" type="integer" length="2"/>
+                    <binary name="StringOffset" id="19" length="6"/>
+                    <string name="password" id="20" strokecolor="FF0000" type="zero-terminated" encoding="UTF-8"/>
+                </structure>
+                <binary name="&lt;Binary Fill Bytes-1&gt;" id="22" unused="yes" length="60"/>
+                <structure name="CIVType" id="28" length="36">
+                    <binary name="&lt;Binary Fill Bytes&gt;" id="31" unused="yes" length="8"/>
+                    <number name="Length" id="32" type="integer" length="2"/>
+                    <binary name="StringOffset" id="33" length="6"/>
+                    <string name="Name" id="34" type="zero-terminated" encoding="UTF-8"/>
+                </structure>
+                <binary name="&lt;Binary Fill Bytes-1&gt;-1" id="30" unused="yes" length="916"/>
+                <structure name="PlayerName" id="21" length="21">
+                    <binary name="&lt;Binary Fill Bytes&gt;" id="24" unused="yes" length="8"/>
+                    <number name="Length" id="25" type="integer" length="2"/>
+                    <binary name="StringOffset" id="26" length="6"/>
+                    <string name="Name" id="27" strokecolor="FF55FF" fillcolor="FF55FF" type="zero-terminated" encoding="UTF-8"/>
+                </structure>
+            </structure>
+        </structure>
+    </grammar>
+</ufwb>
