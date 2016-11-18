@@ -219,6 +219,7 @@ function parseEntry(buffer, state) {
         }
         break;
 
+      case 4:
       case 5:
         result.data = readString(buffer, state);
         break;

@@ -75,3 +75,14 @@ describe('Parse 144', () => {
     }
   });
 });
+
+describe('Parse 203 Save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/000203.Civ6Save'));
+  const parsed = civ6.parse(buffer);
+  const parsedSimple = civ6.parse(buffer, { simple: true });
+
+  it('should have 4 civs', () => {
+    expect(parsed.CIVS.length).to.equal(4);
+    expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+});
