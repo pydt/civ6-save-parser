@@ -86,3 +86,50 @@ describe('Parse 203 Save', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
   });
 });
+
+describe('Parse 12 Peeps Save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/12peeps.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true });
+
+  it('should have 12 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(12);
+  });
+
+  it('should have correct data for the 12 civs', () => {
+    expect(parsedSimple.CIVS[0].ACTOR_NAME).to.equal('CIVILIZATION_FRANCE');
+    expect(parsedSimple.CIVS[0].LEADER_NAME).to.equal('LEADER_CATHERINE_DE_MEDICI');
+    
+    expect(parsedSimple.CIVS[1].ACTOR_NAME).to.equal('CIVILIZATION_EGYPT');
+    expect(parsedSimple.CIVS[1].LEADER_NAME).to.equal('LEADER_CLEOPATRA');
+
+    expect(parsedSimple.CIVS[2].ACTOR_NAME).to.equal('CIVILIZATION_GERMANY');
+    expect(parsedSimple.CIVS[2].LEADER_NAME).to.equal('LEADER_BARBAROSSA');
+
+    expect(parsedSimple.CIVS[3].ACTOR_NAME).to.equal('CIVILIZATION_INDIA');
+    expect(parsedSimple.CIVS[3].LEADER_NAME).to.equal('LEADER_GANDHI');
+    
+    expect(parsedSimple.CIVS[4].ACTOR_NAME).to.equal('CIVILIZATION_SUMERIA');
+    expect(parsedSimple.CIVS[4].LEADER_NAME).to.equal('LEADER_GILGAMESH');
+
+    expect(parsedSimple.CIVS[5].ACTOR_NAME).to.equal('CIVILIZATION_GREECE');
+    expect(parsedSimple.CIVS[5].LEADER_NAME).to.equal('LEADER_GORGO');
+    
+    expect(parsedSimple.CIVS[6].ACTOR_NAME).to.equal('CIVILIZATION_NORWAY');
+    expect(parsedSimple.CIVS[6].LEADER_NAME).to.equal('LEADER_HARDRADA');
+    
+    expect(parsedSimple.CIVS[7].ACTOR_NAME).to.equal('CIVILIZATION_JAPAN');
+    expect(parsedSimple.CIVS[7].LEADER_NAME).to.equal('LEADER_HOJO');
+    
+    expect(parsedSimple.CIVS[8].ACTOR_NAME).to.equal('CIVILIZATION_AZTEC');
+    expect(parsedSimple.CIVS[8].LEADER_NAME).to.equal('LEADER_MONTEZUMA');
+    
+    expect(parsedSimple.CIVS[9].ACTOR_NAME).to.equal('CIVILIZATION_KONGO');
+    expect(parsedSimple.CIVS[9].LEADER_NAME).to.equal('LEADER_MVEMBA');
+    
+    expect(parsedSimple.CIVS[10].ACTOR_NAME).to.equal('CIVILIZATION_BRAZIL');
+    expect(parsedSimple.CIVS[10].LEADER_NAME).to.equal('LEADER_PEDRO');
+    
+    expect(parsedSimple.CIVS[11].ACTOR_NAME).to.equal('CIVILIZATION_GREECE');
+    expect(parsedSimple.CIVS[11].LEADER_NAME).to.equal('LEADER_PERICLES');
+  });
+});

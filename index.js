@@ -19,6 +19,7 @@ const GAME_DATA = {
 
 const ACTOR_DATA = {
   ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
+  LEADER_NAME: new Buffer([0x5F, 0x5E, 0xCD, 0xE8]),
   ACTOR_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
   PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
   PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
@@ -37,7 +38,9 @@ const CIV_SLOTS = {
   7: [2, 6, 5, 1, 3, 7, 4],
   8: [2, 6, 5, 1, 3, 7, 8, 4],
   9: [2, 6, 5, 1, 9, 3, 7, 8, 4],
-  10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4]
+  10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4],
+  11: [2, 6, 10, 5, 1, 9, 3, 7, 11, 8, 4],
+  12: [2, 6, 10, 5, 1, 9, 3, 7, 11, 12, 8, 4]
 };
 
 

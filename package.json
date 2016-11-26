@@ -1,6 +1,6 @@
 {
   "name": "civ6-save-parser",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Parses Civilization VI Save Files.",
   "main": "index.js",
   "scripts": {
