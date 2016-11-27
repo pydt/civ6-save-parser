@@ -2,6 +2,15 @@
 
 require('buffer-v6-polyfill');
 
+// Workaround to detect buggy buffer.from support (which exists on lambda's node v4.3.2)
+let useNewBuffer = false;
+
+try {
+  Buffer.from('1337', 'hex');
+} catch(e) {
+  useNewBuffer = true;
+}
+
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
@@ -308,7 +317,7 @@ function modifyString(buffer, curValueData, newValue) {
   resultBuffer = Buffer.concat([resultBuffer, strLenBuffer]);
 
   // Append new string...
-  resultBuffer = Buffer.concat([resultBuffer, Buffer.from(newValue), new Buffer([0])]);
+  resultBuffer = Buffer.concat([resultBuffer, myBufferFrom(newValue), new Buffer([0])]);
 
   // Append remainder of original buffer
   return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 8 + 8 + curValueData.data.length + 1)]);
@@ -365,4 +374,12 @@ function readCompressedData(buffer, state, filename) {
   const compressedData = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos));
   const uncompressedData = zlib.unzipSync(compressedData);
   fs.writeFileSync(filename, uncompressedData);
+}
+
+function myBufferFrom(source) {
+  if (useNewBuffer) {
+    return new Buffer(source);
+  }
+  
+  return Buffer.from(source);
 }
