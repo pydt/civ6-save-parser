@@ -23,7 +23,10 @@ const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
 
 const GAME_DATA = {
   GAME_TURN: new Buffer([0x9D, 0x2C, 0xE6, 0xBD]),
-  GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05])
+  GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05]),
+  MOD_BLOCK_1: new Buffer([0x5C, 0xAE, 0x27, 0x84]),
+  MOD_BLOCK_2: new Buffer([0xC8, 0xD1, 0x8C, 0x1B]),
+  MOD_BLOCK_3: new Buffer([0x44, 0x7F, 0xD4, 0xFE])
 };
 
 const ACTOR_DATA = {
@@ -144,6 +147,14 @@ module.exports.modifyCiv = (buffer, civData, newValues) => {
   return buffer;
 };
 
+module.exports.deleteArray = (buffer, curValueData) => {
+  if (buffer[curValueData.pos + 4] != 0x0B) {
+    throw new Error('The data passed in isn\'t an array!');
+  }
+
+  return Buffer.concat([buffer.slice(0, curValueData.pos), buffer.slice(curValueData.pos + curValueData.data.arrayLength)]);
+};
+
 if (!module.parent) {
   var argv = require('minimist')(process.argv.slice(2));
   if (!argv._.length) {
@@ -246,8 +257,7 @@ function parseEntry(buffer, state) {
         break;
 
       case 0x0B:
-        result.data = 'UNKNOWN!';
-        state.pos += 28;
+        result.data = readArray(buffer, state);
         break;
 
       default:
@@ -305,6 +315,43 @@ function readString(buffer, state) {
   }
 
   return result;
+}
+
+function readArray(buffer, state) {
+  const origState = _.clone(state);
+  let result = [];
+
+  state.pos += 8;
+  const arrayLen = buffer.readUInt32LE(state.pos);
+  state.pos += 4;
+
+  for (let i = 0; i < arrayLen; i++) {
+    if (buffer[state.pos] != 0x0A) {
+      throw new Error('Error reading array: ' + JSON.stringify(origState));
+    }
+
+    state.pos += 16;
+    const curData = {};
+    result.push(curData);
+    let info;
+
+    do {
+      state = readState(buffer, state);
+      info = parseEntry(buffer, state);
+      console.log(info.marker, info.data);
+
+      for (let key in GAME_DATA) {
+        if (info.marker.equals(GAME_DATA[key])) {
+          curData[key] = info;
+        }
+      }
+    } while (info.data != "1");
+  }
+
+  return {
+    arrayData: result,
+    arrayLength: state.pos + 8 - origState.pos
+  };
 }
 
 function modifyString(buffer, curValueData, newValue) {
