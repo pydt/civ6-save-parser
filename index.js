@@ -26,7 +26,9 @@ const GAME_DATA = {
   GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05]),
   MOD_BLOCK_1: new Buffer([0x5C, 0xAE, 0x27, 0x84]),
   MOD_BLOCK_2: new Buffer([0xC8, 0xD1, 0x8C, 0x1B]),
-  MOD_BLOCK_3: new Buffer([0x44, 0x7F, 0xD4, 0xFE])
+  MOD_BLOCK_3: new Buffer([0x44, 0x7F, 0xD4, 0xFE]),
+  MOD_ID: new Buffer([0x54, 0x5F, 0xC4, 0x04]),
+  MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30])
 };
 
 const ACTOR_DATA = {
@@ -145,14 +147,6 @@ module.exports.modifyCiv = (buffer, civData, newValues) => {
   }
 
   return buffer;
-};
-
-module.exports.deleteArray = (buffer, curValueData) => {
-  if (buffer[curValueData.pos + 4] != 0x0B) {
-    throw new Error('The data passed in isn\'t an array!');
-  }
-
-  return Buffer.concat([buffer.slice(0, curValueData.pos), buffer.slice(curValueData.pos + curValueData.data.arrayLength)]);
 };
 
 if (!module.parent) {
@@ -338,7 +332,6 @@ function readArray(buffer, state) {
     do {
       state = readState(buffer, state);
       info = parseEntry(buffer, state);
-      console.log(info.marker, info.data);
 
       for (let key in GAME_DATA) {
         if (info.marker.equals(GAME_DATA[key])) {
@@ -348,10 +341,7 @@ function readArray(buffer, state) {
     } while (info.data != "1");
   }
 
-  return {
-    arrayData: result,
-    arrayLength: state.pos + 8 - origState.pos
-  };
+  return result;
 }
 
 function modifyString(buffer, curValueData, newValue) {

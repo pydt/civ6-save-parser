@@ -26,19 +26,3 @@ describe('Modify Cathy Save', function() {
     expect(reparse.CIVS[0].data.ACTOR_AI_HUMAN.data).to.equal(1);
   });
 });
-
-describe('Remove Mod Info', function() {
-  let buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
-  const parsed = civ6.parse(buffer);
-
-  it('should be able to remove mod information from the file', () => {
-    expect(parsed).to.have.property('MOD_BLOCK_1');
-
-    buffer = civ6.deleteArray(buffer, parsed.MOD_BLOCK_1);
-    //fs.writeFileSync('test/saves/modified.Civ6Save', buffer);
-
-    const reparse = civ6.parse(buffer);
-
-    expect(reparse).to.not.have.property('MOD_BLOCK_1');
-  });
-});
