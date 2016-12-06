@@ -2,6 +2,8 @@
 
 # Civ 6 Save File Parser
 
+Maintained by the creators of [playyourdamnturn.com](https://www.playyourdamnturn.com).
+
 Usage: `node index.js filename.Civ6Save [OPTIONS]`
 
 ## Options
