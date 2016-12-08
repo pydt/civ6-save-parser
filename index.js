@@ -61,10 +61,13 @@ const CIV_SLOTS = {
 module.exports.parse = (buffer, options) => {
   options = options || {};
 
-  const result = {
+  let parsed = {
     ACTORS: [],
     CIVS: []
   };
+
+  const chunks = [];
+  let chunkStart = 0;
 
   let state = readState(buffer);
 
@@ -79,6 +82,12 @@ module.exports.parse = (buffer, options) => {
     state.pos++;
   }
 
+  chunks.push({
+    buffer: buffer.slice(chunkStart, state.pos)
+  });
+
+  chunkStart = state.pos;
+
   do {
     if (state.next4.equals(END_UNCOMPRESSED)) {
       if (options.outputCompressed) {
@@ -92,36 +101,54 @@ module.exports.parse = (buffer, options) => {
 
     for (let key in GAME_DATA) {
       if (info.marker.equals(GAME_DATA[key])) {
-        result[key] = info;
+        parsed[key] = info;
       }
     }
 
     if (info.marker.equals(START_ACTOR)) {
-      result.ACTORS.push({
+      parsed.ACTORS.push({
         pos: state.pos,
         data: readActor(info, buffer, state)
       });
     }
+
+    chunks.push({
+      buffer: buffer.slice(chunkStart, state.pos)
+    });
+
+    chunkStart = state.pos;
   } while (null !== (state = readState(buffer, state)));
+
+  /*var wstream = fs.createWriteStream('testchunking.Civ6Save');
+
+  for (let chunk of rawChunks) {
+    wstream.write(chunk.buffer);
+  }
+
+  wstream.write(buffer.slice(state.pos));
+  wstream.end();*/
 
   let fullCivs = [];
 
-  for (let actor of _.clone(result.ACTORS)) {
+  for (let actor of _.clone(parsed.ACTORS)) {
     if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
       fullCivs.push(actor);
-      _.pull(result.ACTORS, actor);
+      _.pull(parsed.ACTORS, actor);
     }
   }
 
   for (let i = 0; i < fullCivs.length; i++) {
-    result.CIVS[CIV_SLOTS[fullCivs.length][i] - 1] = fullCivs[i];
+    parsed.CIVS[CIV_SLOTS[fullCivs.length][i] - 1] = fullCivs[i];
   }
 
   if (options.simple) {
-    return simplify(result);
+    parsed = simplify(parsed);
   }
 
-  return result;
+  return {
+    parsed: parsed,
+    chunks: chunks
+  };
 };
 
 module.exports.modifyCiv = (buffer, civData, newValues) => {
@@ -156,7 +183,7 @@ if (!module.parent) {
   } else {
     const buffer = new Buffer(fs.readFileSync(argv._[0]));
     const result = module.exports.parse(buffer, argv);
-    console.log(util.inspect(result, false, null));
+    console.log(util.inspect(result.parsed, false, null));
   }
 }
 
