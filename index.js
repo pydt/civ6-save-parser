@@ -68,6 +68,7 @@ module.exports.parse = (buffer, options) => {
 
   const chunks = [];
   let chunkStart = 0;
+  let curActor;
 
   let state = readState(buffer);
 
@@ -82,9 +83,7 @@ module.exports.parse = (buffer, options) => {
     state.pos++;
   }
 
-  chunks.push({
-    buffer: buffer.slice(chunkStart, state.pos)
-  });
+  chunks.push(buffer.slice(chunkStart, state.pos));
 
   chunkStart = state.pos;
 
@@ -99,34 +98,38 @@ module.exports.parse = (buffer, options) => {
 
     const info = parseEntry(buffer, state);
 
-    for (let key in GAME_DATA) {
-      if (info.marker.equals(GAME_DATA[key])) {
-        parsed[key] = info;
+    if (info.marker.equals(START_ACTOR)) {
+      curActor = {
+        pos: state.pos,
+        data: {}
+      };
+
+      parsed.ACTORS.push(curActor);
+    } else if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
+      curActor = null;
+    } else {
+      for (let key in GAME_DATA) {
+        if (info.marker.equals(GAME_DATA[key])) {
+          parsed[key] = info;
+        }
+      }
+
+      if (curActor) {
+        for (let key in ACTOR_DATA) {
+          if (info.marker.equals(ACTOR_DATA[key])) {
+            curActor.data[key] = info;
+          }
+        }
       }
     }
 
-    if (info.marker.equals(START_ACTOR)) {
-      parsed.ACTORS.push({
-        pos: state.pos,
-        data: readActor(info, buffer, state)
-      });
-    }
-
-    chunks.push({
-      buffer: buffer.slice(chunkStart, state.pos)
-    });
+    info.chunk = buffer.slice(chunkStart, state.pos); 
+    chunks.push(info.chunk);
 
     chunkStart = state.pos;
   } while (null !== (state = readState(buffer, state)));
 
-  /*var wstream = fs.createWriteStream('testchunking.Civ6Save');
-
-  for (let chunk of rawChunks) {
-    wstream.write(chunk.buffer);
-  }
-
-  wstream.write(buffer.slice(state.pos));
-  wstream.end();*/
+  chunks.push(buffer.slice(state.pos));
 
   let fullCivs = [];
 
@@ -151,29 +154,21 @@ module.exports.parse = (buffer, options) => {
   };
 };
 
-module.exports.modifyCiv = (buffer, civData, newValues) => {
-  for (let key in newValues) {
-    if (!civData.data[key]) {
-      throw new Error('Adding a value that doesn\'t exist isn\'t supported yet.');
-    }
+module.exports.modifyChunk = (chunks, parsedToken, newValue) => {
+  const chunkIndex = chunks.indexOf(parsedToken.chunk);
 
-    const civValue = civData.data[key];
+  switch (parsedToken.type) {
+    case 2:
+      chunks[chunkIndex] = parsedToken.chunk = writeInt(parsedToken.marker, newValue);
+      break;
 
-    switch (civValue.type) {
-      case 2:
-        buffer = modifyInt(buffer, civValue, newValues[key]);
-        break;
+    case 5:
+      chunks[chunkIndex] = parsedToken.chunk = writeString(parsedToken.marker, newValue);
+      break;
 
-      case 5:
-        buffer = modifyString(buffer, civValue, newValues[key]);
-        break;
-
-      default:
-        throw new Error('I don\'t know how to modify type ' + civValue.type);
-    }
+    default:
+      throw new Error('I don\'t know how to modify type ' + civValue.type);
   }
-
-  return buffer;
 };
 
 if (!module.parent) {
@@ -289,30 +284,6 @@ function parseEntry(buffer, state) {
   return result;
 }
 
-function readActor(info, buffer, state) {
-  const result = {};
-
-  do {
-    if (info === null) {
-      info = parseEntry(buffer, state);
-    }
-
-    for (let key in ACTOR_DATA) {
-      if (info.marker.equals(ACTOR_DATA[key])) {
-        result[key] = info;
-      }
-    }
-
-    if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
-      break;
-    }
-
-    info = null;
-  } while ((state = readState(buffer, state)) != null);
-
-  return result;
-}
-
 function readString(buffer, state) {
   const origState = _.clone(state);
   let result = null;
@@ -371,20 +342,11 @@ function readArray(buffer, state) {
   return result;
 }
 
-function modifyString(buffer, curValueData, newValue) {
-  // Chop current buffer after the type...
-  let resultBuffer = buffer.slice(0, curValueData.pos + 8);
-
-  // Append new string length...
+function writeString(marker, newValue) {
   const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
   strLenBuffer.writeUInt16LE(newValue.length + 1, 0);
-  resultBuffer = Buffer.concat([resultBuffer, strLenBuffer]);
 
-  // Append new string...
-  resultBuffer = Buffer.concat([resultBuffer, myBufferFrom(newValue), new Buffer([0])]);
-
-  // Append remainder of original buffer
-  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 8 + 8 + curValueData.data.length + 1)]);
+  return Buffer.concat([marker, new Buffer([5, 0, 0, 0]), strLenBuffer, myBufferFrom(newValue), new Buffer([0])]);
 }
 
 function readUtfString(buffer, state) {
@@ -421,17 +383,11 @@ function readInt(buffer, state) {
   return result;
 }
 
-function modifyInt(buffer, curValueData, newValue) {
-  // Chop current buffer after the type and padding...
-  let resultBuffer = buffer.slice(0, curValueData.pos + 16);
-
-  // Append new integer value...
+function writeInt(marker, value) {
   const valueBuffer = Buffer.alloc(4);
-  valueBuffer.writeUInt32LE(newValue);
-  resultBuffer = Buffer.concat([resultBuffer, valueBuffer]);
+  valueBuffer.writeUInt32LE(value);
 
-  // Append remainder of original buffer
-  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 20)]);
+  return Buffer.concat([marker, new Buffer([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function readCompressedData(buffer, state, filename) {
