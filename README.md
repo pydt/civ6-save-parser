@@ -10,3 +10,7 @@ Usage: `node index.js filename.Civ6Save [OPTIONS]`
 
 * **--outputCompressed**: Writes the compressed payload to the working directory.
 * **--simple**: Just outputs the parsed information, no metadata.
+
+## Use as Module
+
+See tests for module usage, docs will come as the API stabilizes

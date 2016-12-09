@@ -21,31 +21,31 @@ describe('Modify Cathy Save', function() {
   });
 
   it('should be able to add a password', () => {
-    const headerLen0 = data.parsed.CIVS[0].data.SLOT_1_HEADER.data;
+    const headerLen0 = data.parsed.CIVS[0].data.SLOT_HEADER.data;
     civ6.addChunk(data.chunks, data.parsed.CIVS[0].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password1');
-    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.SLOT_1_HEADER, headerLen0 + 1);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.SLOT_HEADER, headerLen0 + 1);
 
-    const headerLen1 = data.parsed.CIVS[1].data.SLOT_2_HEADER.data;
+    const headerLen1 = data.parsed.CIVS[1].data.SLOT_HEADER.data;
     civ6.addChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password2');
-    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, headerLen1 + 1);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_HEADER, headerLen1 + 1);
 
     data = civ6.parse(Buffer.concat(data.chunks));
 
     expect(data.parsed.CIVS[0].data.PLAYER_PASSWORD.data).to.equal('password1');
-    expect(data.parsed.CIVS[0].data.SLOT_1_HEADER.data).to.equal(headerLen0 + 1);
+    expect(data.parsed.CIVS[0].data.SLOT_HEADER.data).to.equal(headerLen0 + 1); // The value of slot header needs to equal the number of "chunks" of data in the slot
     expect(data.parsed.CIVS[1].data.PLAYER_PASSWORD.data).to.equal('password2');
-    expect(data.parsed.CIVS[1].data.SLOT_2_HEADER.data).to.equal(headerLen1+ 1);
+    expect(data.parsed.CIVS[1].data.SLOT_HEADER.data).to.equal(headerLen1 + 1);
   });
 
   it('should be able to delete a password', () => {
-    const headerLen1 = data.parsed.CIVS[1].data.SLOT_2_HEADER.data;
+    const headerLen1 = data.parsed.CIVS[1].data.SLOT_HEADER.data;
     civ6.deleteChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_PASSWORD);
-    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, headerLen1 - 1);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_HEADER, headerLen1 - 1);
 
     data = civ6.parse(Buffer.concat(data.chunks));
 
     expect(data.parsed.CIVS[1].data).to.not.have.property('PLAYER_PASSWORD');
-    expect(data.parsed.CIVS[1].data.SLOT_2_HEADER.data).to.equal(headerLen1 - 1);
+    expect(data.parsed.CIVS[1].data.SLOT_HEADER.data).to.equal(headerLen1 - 1);
   });
 
   it('should be able to change a human player to AI', () => {

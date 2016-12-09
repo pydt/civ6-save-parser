@@ -31,20 +31,20 @@ const GAME_DATA = {
   MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30])
 };
 
-const SLOT_HEADERS = {
-  SLOT_1_HEADER: new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
-  SLOT_2_HEADER: new Buffer([0x5E, 0xAB ,0x58, 0x12]),
-  SLOT_3_HEADER: new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
-  SLOT_4_HEADER: new Buffer([0x72, 0xCA, 0x56, 0xFC]),
-  SLOT_5_HEADER: new Buffer([0xD1, 0x5F, 0x32 ,0x62]),
-  SLOT_6_HEADER: new Buffer([0x47, 0x6F, 0x35, 0x15]),
-  SLOT_7_HEADER: new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
-  SLOT_8_HEADER: new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
-  SLOT_9_HEADER: new Buffer([0xFA, 0x13, 0x84, 0x6B]),
-  SLOT_10_HEADER: new Buffer([0x6C, 0x23, 0x83, 0x1C]),
-  SLOT_11_HEADER: new Buffer([0xF4, 0x14, 0x18, 0xAA]),
-  SLOT_12_HEADER: new Buffer([0x62, 0x24, 0x1F, 0xDD])
-};
+const SLOT_HEADERS = [
+  new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
+  new Buffer([0x5E, 0xAB ,0x58, 0x12]),
+  new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
+  new Buffer([0x72, 0xCA, 0x56, 0xFC]),
+  new Buffer([0xD1, 0x5F, 0x32 ,0x62]),
+  new Buffer([0x47, 0x6F, 0x35, 0x15]),
+  new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
+  new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
+  new Buffer([0xFA, 0x13, 0x84, 0x6B]),
+  new Buffer([0x6C, 0x23, 0x83, 0x1C]),
+  new Buffer([0xF4, 0x14, 0x18, 0xAA]),
+  new Buffer([0x62, 0x24, 0x1F, 0xDD])
+];
 
 const ACTOR_DATA = {
   ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
@@ -114,8 +114,8 @@ module.exports.parse = (buffer, options) => {
       }
     };
 
-    for (let key in SLOT_HEADERS) {
-      tryAddActor(key, SLOT_HEADERS[key]);
+    for (let marker of SLOT_HEADERS) {
+      tryAddActor('SLOT_HEADER', marker);
     }
 
     if (!curActor && info.marker.equals(START_ACTOR)) {
@@ -146,11 +146,10 @@ module.exports.parse = (buffer, options) => {
 
   chunks.push(buffer.slice(state.pos));
 
-  for (let i = 1; i <= _.size(SLOT_HEADERS); i++) {
-    const targetSlot = `SLOT_${i}_HEADER`;
-
+  for (let curMarker of SLOT_HEADERS) {
     const curCiv = _.find(parsed.ACTORS, actor => {
-      return actor.data[targetSlot] && 
+      return actor.data.SLOT_HEADER &&
+        actor.data.SLOT_HEADER.marker.equals(curMarker) &&
         actor.data.ACTOR_TYPE &&
         actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
     });
