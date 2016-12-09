@@ -6,45 +6,57 @@ const civ6 = require('../index.js');
 
 describe('Modify Cathy Save', function() {
   let buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
-  const data = civ6.parse(buffer);
+  let data = civ6.parse(buffer);
 
   it('should be able to change player names in any order', () => {
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.PLAYER_NAME, 'Mike Rosack 0');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[2].data.PLAYER_NAME, 'Mike Rosack 2');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_NAME, 'Mike Rosack 1');
-    buffer = Buffer.concat(data.chunks);
+    
+    data = civ6.parse(Buffer.concat(data.chunks));
 
-    const reparse = civ6.parse(buffer).parsed;
-
-    expect(reparse.CIVS[0].data.PLAYER_NAME.data).to.equal('Mike Rosack 0');
-    expect(reparse.CIVS[1].data.PLAYER_NAME.data).to.equal('Mike Rosack 1');
-    expect(reparse.CIVS[2].data.PLAYER_NAME.data).to.equal('Mike Rosack 2');
+    expect(data.parsed.CIVS[0].data.PLAYER_NAME.data).to.equal('Mike Rosack 0');
+    expect(data.parsed.CIVS[1].data.PLAYER_NAME.data).to.equal('Mike Rosack 1');
+    expect(data.parsed.CIVS[2].data.PLAYER_NAME.data).to.equal('Mike Rosack 2');
   });
 
   it('should be able to add a password', () => {
+    const headerLen0 = data.parsed.CIVS[0].data.SLOT_1_HEADER.data;
     civ6.addChunk(data.chunks, data.parsed.CIVS[0].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password1');
-    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.SLOT_1_HEADER, data.parsed.CIVS[0].data.SLOT_1_HEADER.data + 1);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.SLOT_1_HEADER, headerLen0 + 1);
 
+    const headerLen1 = data.parsed.CIVS[1].data.SLOT_2_HEADER.data;
     civ6.addChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password2');
-    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, data.parsed.CIVS[1].data.SLOT_2_HEADER.data + 1);
-    buffer = Buffer.concat(data.chunks);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, headerLen1 + 1);
 
-    const reparse = civ6.parse(buffer).parsed;
+    data = civ6.parse(Buffer.concat(data.chunks));
 
-    expect(reparse.CIVS[0].data.PLAYER_PASSWORD.data).to.equal('password1');
-    expect(reparse.CIVS[1].data.PLAYER_PASSWORD.data).to.equal('password2');
+    expect(data.parsed.CIVS[0].data.PLAYER_PASSWORD.data).to.equal('password1');
+    expect(data.parsed.CIVS[0].data.SLOT_1_HEADER.data).to.equal(headerLen0 + 1);
+    expect(data.parsed.CIVS[1].data.PLAYER_PASSWORD.data).to.equal('password2');
+    expect(data.parsed.CIVS[1].data.SLOT_2_HEADER.data).to.equal(headerLen1+ 1);
+  });
+
+  it('should be able to delete a password', () => {
+    const headerLen1 = data.parsed.CIVS[1].data.SLOT_2_HEADER.data;
+    civ6.deleteChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_PASSWORD);
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, headerLen1 - 1);
+
+    data = civ6.parse(Buffer.concat(data.chunks));
+
+    expect(data.parsed.CIVS[1].data).to.not.have.property('PLAYER_PASSWORD');
+    expect(data.parsed.CIVS[1].data.SLOT_2_HEADER.data).to.equal(headerLen1 - 1);
   });
 
   it('should be able to change a human player to AI', () => {
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.ACTOR_AI_HUMAN, 1);
-    buffer = Buffer.concat(data.chunks);
 
-    const reparse = civ6.parse(buffer).parsed;
+    data = civ6.parse(Buffer.concat(data.chunks));
 
-    expect(reparse.CIVS[1].data.ACTOR_AI_HUMAN.data).to.equal(1);
+    expect(data.parsed.CIVS[1].data.ACTOR_AI_HUMAN.data).to.equal(1);
   });
 
   /*it('writes the modified save file for debugging purposes', () => {
-    fs.writeFileSync('test/saves/modified.Civ6Save', buffer);
+    fs.writeFileSync('test/saves/modified.Civ6Save', Buffer.concat(data.chunks));
   });*/
 });

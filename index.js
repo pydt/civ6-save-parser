@@ -188,6 +188,10 @@ module.exports.modifyChunk = (chunks, parsedData, newValue) => {
   chunks[chunkIndex] = parsedData.chunk = writeValue(parsedData.marker, parsedData.type, newValue);
 };
 
+module.exports.deleteChunk = (chunks, parsedData) => {
+  _.pull(chunks, parsedData.chunk);
+}
+
 if (!module.parent) {
   var argv = require('minimist')(process.argv.slice(2));
   if (!argv._.length) {
