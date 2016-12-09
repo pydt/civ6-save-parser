@@ -31,7 +31,7 @@ const GAME_DATA = {
   MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30])
 };
 
-const SLOT_HEADER = {
+const SLOT_HEADERS = {
   SLOT_1_HEADER: new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
   SLOT_2_HEADER: new Buffer([0x5E, 0xAB ,0x58, 0x12]),
   SLOT_3_HEADER: new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
@@ -60,22 +60,6 @@ const ACTOR_DATA = {
 module.exports.MARKERS = {
   START_ACTOR, END_UNCOMPRESSED, COMPRESSED_DATA_END, GAME_DATA, ACTOR_DATA
 };
-
-// WHAT IS THE METHOD TO THIS MADNESS!?!?!?!
-const CIV_SLOTS = {
-  2: [2, 1],
-  3: [2, 1, 3],
-  4: [2, 1, 3, 4],
-  5: [2, 5, 1, 3, 4],
-  6: [2, 6, 5, 1, 3, 4],
-  7: [2, 6, 5, 1, 3, 7, 4],
-  8: [2, 6, 5, 1, 3, 7, 8, 4],
-  9: [2, 6, 5, 1, 9, 3, 7, 8, 4],
-  10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4],
-  11: [2, 6, 10, 5, 1, 9, 3, 7, 11, 8, 4],
-  12: [2, 6, 10, 5, 1, 9, 3, 7, 11, 12, 8, 4]
-};
-
 
 module.exports.parse = (buffer, options) => {
   options = options || {};
@@ -130,8 +114,8 @@ module.exports.parse = (buffer, options) => {
       }
     };
 
-    for (let key in SLOT_HEADER) {
-      tryAddActor(key, SLOT_HEADER[key]);
+    for (let key in SLOT_HEADERS) {
+      tryAddActor(key, SLOT_HEADERS[key]);
     }
 
     if (!curActor && info.marker.equals(START_ACTOR)) {
@@ -162,19 +146,25 @@ module.exports.parse = (buffer, options) => {
 
   chunks.push(buffer.slice(state.pos));
 
-  let fullCivs = [];
+  for (let i = 1; i <= _.size(SLOT_HEADERS); i++) {
+    const targetSlot = `SLOT_${i}_HEADER`;
+
+    const curCiv = _.find(parsed.ACTORS, actor => {
+      return actor.data[targetSlot] && 
+        actor.data.ACTOR_TYPE &&
+        actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
+    });
+
+    if (curCiv) {
+      parsed.CIVS.push(curCiv);
+      _.pull(parsed.ACTORS, curCiv);
+    }
+  }
 
   for (let actor of _.clone(parsed.ACTORS)) {
     if (!actor.data.ACTOR_TYPE) {
       _.pull(parsed.ACTORS, actor);
-    } else if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
-      fullCivs.push(actor);
-      _.pull(parsed.ACTORS, actor);
     }
-  }
-
-  for (let i = 0; i < fullCivs.length; i++) {
-    parsed.CIVS[CIV_SLOTS[fullCivs.length][i] - 1] = fullCivs[i];
   }
 
   if (options.simple) {
