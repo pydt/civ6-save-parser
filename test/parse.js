@@ -6,8 +6,8 @@ const civ6 = require('../index.js');
 
 describe('Parse Cathy Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
-  const parsed = civ6.parse(buffer);
-  const parsedSimple = civ6.parse(buffer, { simple: true });
+  const parsed = civ6.parse(buffer).parsed;
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
@@ -44,8 +44,8 @@ describe('Parse Cathy Save', () => {
 
 describe('Parse Hojo Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/HŌJŌ TOKIMUNE 341 1920 d. C..Civ6Save'));
-  const parsed = civ6.parse(buffer);
-  const parsedSimple = civ6.parse(buffer, { simple: true });
+  const parsed = civ6.parse(buffer).parsed;
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
   it('should have 6 civs', () => {
     expect(parsed.CIVS.length).to.equal(6);
@@ -55,8 +55,8 @@ describe('Parse Hojo Save', () => {
 
 describe('Parse 144', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000144.Civ6Save'));
-  const parsed = civ6.parse(buffer);
-  const parsedSimple = civ6.parse(buffer, { simple: true });
+  const parsed = civ6.parse(buffer).parsed;
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
@@ -78,8 +78,8 @@ describe('Parse 144', () => {
 
 describe('Parse 203 Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000203.Civ6Save'));
-  const parsed = civ6.parse(buffer);
-  const parsedSimple = civ6.parse(buffer, { simple: true });
+  const parsed = civ6.parse(buffer).parsed;
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
@@ -89,7 +89,7 @@ describe('Parse 203 Save', () => {
 
 describe('Parse 12 Peeps Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/12peeps.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true });
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
   it('should have 12 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(12);

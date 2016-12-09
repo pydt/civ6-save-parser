@@ -31,6 +31,21 @@ const GAME_DATA = {
   MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30])
 };
 
+const SLOT_HEADERS = [
+  new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
+  new Buffer([0x5E, 0xAB ,0x58, 0x12]),
+  new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
+  new Buffer([0x72, 0xCA, 0x56, 0xFC]),
+  new Buffer([0xD1, 0x5F, 0x32 ,0x62]),
+  new Buffer([0x47, 0x6F, 0x35, 0x15]),
+  new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
+  new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
+  new Buffer([0xFA, 0x13, 0x84, 0x6B]),
+  new Buffer([0x6C, 0x23, 0x83, 0x1C]),
+  new Buffer([0xF4, 0x14, 0x18, 0xAA]),
+  new Buffer([0x62, 0x24, 0x1F, 0xDD])
+];
+
 const ACTOR_DATA = {
   ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
   LEADER_NAME: new Buffer([0x5F, 0x5E, 0xCD, 0xE8]),
@@ -42,29 +57,21 @@ const ACTOR_DATA = {
   ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
 };
 
-// WHAT IS THE METHOD TO THIS MADNESS!?!?!?!
-const CIV_SLOTS = {
-  2: [2, 1],
-  3: [2, 1, 3],
-  4: [2, 1, 3, 4],
-  5: [2, 5, 1, 3, 4],
-  6: [2, 6, 5, 1, 3, 4],
-  7: [2, 6, 5, 1, 3, 7, 4],
-  8: [2, 6, 5, 1, 3, 7, 8, 4],
-  9: [2, 6, 5, 1, 9, 3, 7, 8, 4],
-  10: [2, 6, 10, 5, 1, 9, 3, 7, 8, 4],
-  11: [2, 6, 10, 5, 1, 9, 3, 7, 11, 8, 4],
-  12: [2, 6, 10, 5, 1, 9, 3, 7, 11, 12, 8, 4]
+module.exports.MARKERS = {
+  START_ACTOR, END_UNCOMPRESSED, COMPRESSED_DATA_END, GAME_DATA, ACTOR_DATA
 };
-
 
 module.exports.parse = (buffer, options) => {
   options = options || {};
 
-  const result = {
+  let parsed = {
     ACTORS: [],
     CIVS: []
   };
+
+  const chunks = [];
+  let chunkStart = 0;
+  let curActor;
 
   let state = readState(buffer);
 
@@ -79,6 +86,10 @@ module.exports.parse = (buffer, options) => {
     state.pos++;
   }
 
+  chunks.push(buffer.slice(chunkStart, state.pos));
+
+  chunkStart = state.pos;
+
   do {
     if (state.next4.equals(END_UNCOMPRESSED)) {
       if (options.outputCompressed) {
@@ -90,64 +101,95 @@ module.exports.parse = (buffer, options) => {
 
     const info = parseEntry(buffer, state);
 
-    for (let key in GAME_DATA) {
-      if (info.marker.equals(GAME_DATA[key])) {
-        result[key] = info;
+    const tryAddActor = (key, marker) => {
+      if (info.marker.equals(marker)) {
+        curActor = {
+          pos: state.pos,
+          data: {}
+        };
+
+        curActor.data[key] = info;
+
+        parsed.ACTORS.push(curActor);
+      }
+    };
+
+    for (let marker of SLOT_HEADERS) {
+      tryAddActor('SLOT_HEADER', marker);
+    }
+
+    if (!curActor && info.marker.equals(START_ACTOR)) {
+      tryAddActor('START_ACTOR', START_ACTOR);
+    } else if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
+      curActor = null;
+    } else {
+      for (let key in GAME_DATA) {
+        if (info.marker.equals(GAME_DATA[key])) {
+          parsed[key] = info;
+        }
+      }
+
+      if (curActor) {
+        for (let key in ACTOR_DATA) {
+          if (info.marker.equals(ACTOR_DATA[key])) {
+            curActor.data[key] = info;
+          }
+        }
       }
     }
 
-    if (info.marker.equals(START_ACTOR)) {
-      result.ACTORS.push({
-        pos: state.pos,
-        data: readActor(info, buffer, state)
-      });
-    }
+    info.chunk = buffer.slice(chunkStart, state.pos); 
+    chunks.push(info.chunk);
+
+    chunkStart = state.pos;
   } while (null !== (state = readState(buffer, state)));
 
-  let fullCivs = [];
+  chunks.push(buffer.slice(state.pos));
 
-  for (let actor of _.clone(result.ACTORS)) {
-    if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
-      fullCivs.push(actor);
-      _.pull(result.ACTORS, actor);
+  for (let curMarker of SLOT_HEADERS) {
+    const curCiv = _.find(parsed.ACTORS, actor => {
+      return actor.data.SLOT_HEADER &&
+        actor.data.SLOT_HEADER.marker.equals(curMarker) &&
+        actor.data.ACTOR_TYPE &&
+        actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
+    });
+
+    if (curCiv) {
+      parsed.CIVS.push(curCiv);
+      _.pull(parsed.ACTORS, curCiv);
     }
   }
 
-  for (let i = 0; i < fullCivs.length; i++) {
-    result.CIVS[CIV_SLOTS[fullCivs.length][i] - 1] = fullCivs[i];
+  for (let actor of _.clone(parsed.ACTORS)) {
+    if (!actor.data.ACTOR_TYPE) {
+      _.pull(parsed.ACTORS, actor);
+    }
   }
 
   if (options.simple) {
-    return simplify(result);
+    parsed = simplify(parsed);
   }
 
-  return result;
+  return {
+    parsed: parsed,
+    chunks: chunks
+  };
 };
 
-module.exports.modifyCiv = (buffer, civData, newValues) => {
-  for (let key in newValues) {
-    if (!civData.data[key]) {
-      throw new Error('Adding a value that doesn\'t exist isn\'t supported yet.');
-    }
-
-    const civValue = civData.data[key];
-
-    switch (civValue.type) {
-      case 2:
-        buffer = modifyInt(buffer, civValue, newValues[key]);
-        break;
-
-      case 5:
-        buffer = modifyString(buffer, civValue, newValues[key]);
-        break;
-
-      default:
-        throw new Error('I don\'t know how to modify type ' + civValue.type);
-    }
-  }
-
-  return buffer;
+module.exports.addChunk = (chunks, afterData, marker, type, value) => {
+  const newChunk = writeValue(marker, type, value);
+  const chunkIndex = chunks.indexOf(afterData.chunk) + 1;
+  chunks.splice(chunkIndex, 0, newChunk);
 };
+
+module.exports.modifyChunk = (chunks, parsedData, newValue) => {
+  const chunkIndex = chunks.indexOf(parsedData.chunk);
+  chunks[chunkIndex] = parsedData.chunk = writeValue(parsedData.marker, parsedData.type, newValue);
+};
+
+module.exports.deleteChunk = (chunks, parsedData) => {
+  _.pull(chunks, parsedData.chunk);
+}
 
 if (!module.parent) {
   var argv = require('minimist')(process.argv.slice(2));
@@ -156,11 +198,27 @@ if (!module.parent) {
   } else {
     const buffer = new Buffer(fs.readFileSync(argv._[0]));
     const result = module.exports.parse(buffer, argv);
-    console.log(util.inspect(result, false, null));
+    console.log(util.inspect(result.parsed, false, null));
   }
 }
 
 // Helper functions
+
+function writeValue(marker, type, value) {
+  switch (type) {
+    case 2:
+      return writeInt(marker, value);
+
+    case 0x0A:
+      return writeArrayLen(marker, value);
+
+    case 5:
+      return writeString(marker, value);
+
+    default:
+      throw new Error('I don\'t know how to write type ' + type);
+  }
+}
 
 function simplify(result) {
   let mapFn = _.mapValues;
@@ -217,11 +275,11 @@ function parseEntry(buffer, state) {
         break;
 
       case 2:
+      case 0x0A: // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
         result.data = readInt(buffer, state);
         break;
 
       case 3:
-      case 0x0A:
         result.data = 'UNKNOWN!';
         state.pos += 12;
         break;
@@ -258,30 +316,6 @@ function parseEntry(buffer, state) {
         throw new Error('Error parsing: ' + JSON.stringify(result));
     }
   }
-
-  return result;
-}
-
-function readActor(info, buffer, state) {
-  const result = {};
-
-  do {
-    if (info === null) {
-      info = parseEntry(buffer, state);
-    }
-
-    for (let key in ACTOR_DATA) {
-      if (info.marker.equals(ACTOR_DATA[key])) {
-        result[key] = info;
-      }
-    }
-
-    if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
-      break;
-    }
-
-    info = null;
-  } while ((state = readState(buffer, state)) != null);
 
   return result;
 }
@@ -344,20 +378,11 @@ function readArray(buffer, state) {
   return result;
 }
 
-function modifyString(buffer, curValueData, newValue) {
-  // Chop current buffer after the type...
-  let resultBuffer = buffer.slice(0, curValueData.pos + 8);
-
-  // Append new string length...
+function writeString(marker, newValue) {
   const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
   strLenBuffer.writeUInt16LE(newValue.length + 1, 0);
-  resultBuffer = Buffer.concat([resultBuffer, strLenBuffer]);
 
-  // Append new string...
-  resultBuffer = Buffer.concat([resultBuffer, myBufferFrom(newValue), new Buffer([0])]);
-
-  // Append remainder of original buffer
-  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 8 + 8 + curValueData.data.length + 1)]);
+  return Buffer.concat([marker, new Buffer([5, 0, 0, 0]), strLenBuffer, myBufferFrom(newValue), new Buffer([0])]);
 }
 
 function readUtfString(buffer, state) {
@@ -394,17 +419,18 @@ function readInt(buffer, state) {
   return result;
 }
 
-function modifyInt(buffer, curValueData, newValue) {
-  // Chop current buffer after the type and padding...
-  let resultBuffer = buffer.slice(0, curValueData.pos + 16);
-
-  // Append new integer value...
+function writeInt(marker, value) {
   const valueBuffer = Buffer.alloc(4);
-  valueBuffer.writeUInt32LE(newValue);
-  resultBuffer = Buffer.concat([resultBuffer, valueBuffer]);
+  valueBuffer.writeUInt32LE(value);
 
-  // Append remainder of original buffer
-  return Buffer.concat([resultBuffer, buffer.slice(curValueData.pos + 20)]);
+  return Buffer.concat([marker, new Buffer([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
+}
+
+function writeArrayLen(marker, value) {
+  const valueBuffer = Buffer.alloc(4);
+  valueBuffer.writeUInt32LE(value);
+
+  return Buffer.concat([marker, new Buffer([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function readCompressedData(buffer, state, filename) {
