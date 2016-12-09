@@ -36,10 +36,15 @@ const ACTOR_DATA = {
   LEADER_NAME: new Buffer([0x5F, 0x5E, 0xCD, 0xE8]),
   ACTOR_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
   PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
+  THING_BEFORE_PASSWORD: new Buffer([0xA6, 0xDF, 0xA7, 0x62]),
   PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
   IS_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
   ACTOR_AI_HUMAN: new Buffer([0x95, 0xB9, 0x42, 0xCE]),  // 3 = Human, 1 = AI
   ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
+};
+
+module.exports.MARKERS = {
+  START_ACTOR, END_UNCOMPRESSED, COMPRESSED_DATA_END, GAME_DATA, ACTOR_DATA
 };
 
 // WHAT IS THE METHOD TO THIS MADNESS!?!?!?!
@@ -154,21 +159,15 @@ module.exports.parse = (buffer, options) => {
   };
 };
 
-module.exports.modifyChunk = (chunks, parsedToken, newValue) => {
-  const chunkIndex = chunks.indexOf(parsedToken.chunk);
+module.exports.addChunk = (chunks, afterData, marker, type, value) => {
+  const newChunk = writeValue(marker, type, value);
+  const chunkIndex = chunks.indexOf(afterData.chunk) + 1;
+  chunks.splice(chunkIndex, 0, newChunk);
+};
 
-  switch (parsedToken.type) {
-    case 2:
-      chunks[chunkIndex] = parsedToken.chunk = writeInt(parsedToken.marker, newValue);
-      break;
-
-    case 5:
-      chunks[chunkIndex] = parsedToken.chunk = writeString(parsedToken.marker, newValue);
-      break;
-
-    default:
-      throw new Error('I don\'t know how to modify type ' + civValue.type);
-  }
+module.exports.modifyChunk = (chunks, parsedData, newValue) => {
+  const chunkIndex = chunks.indexOf(parsedData.chunk);
+  chunks[chunkIndex] = parsedData.chunk = writeValue(parsedData.marker, parsedData.type, newValue);
 };
 
 if (!module.parent) {
@@ -183,6 +182,19 @@ if (!module.parent) {
 }
 
 // Helper functions
+
+function writeValue(marker, type, value) {
+  switch (type) {
+    case 2:
+      return writeInt(marker, value);
+
+    case 5:
+      return writeString(marker, value);
+
+    default:
+      throw new Error('I don\'t know how to write type ' + type);
+  }
+}
 
 function simplify(result) {
   let mapFn = _.mapValues;
