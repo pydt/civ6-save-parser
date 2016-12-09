@@ -22,10 +22,10 @@ describe('Modify Cathy Save', function() {
   });
 
   it('should be able to add a password', () => {
-    civ6.addChunk(data.chunks, data.parsed.CIVS[0].data.THING_BEFORE_PASSWORD, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password1');
+    civ6.addChunk(data.chunks, data.parsed.CIVS[0].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password1');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].data.SLOT_1_HEADER, data.parsed.CIVS[0].data.SLOT_1_HEADER.data + 1);
 
-    civ6.addChunk(data.chunks, data.parsed.CIVS[1].data.THING_BEFORE_PASSWORD, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password2');
+    civ6.addChunk(data.chunks, data.parsed.CIVS[1].data.PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, 5, 'password2');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].data.SLOT_2_HEADER, data.parsed.CIVS[1].data.SLOT_2_HEADER.data + 1);
     buffer = Buffer.concat(data.chunks);
 
