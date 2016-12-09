@@ -31,6 +31,21 @@ const GAME_DATA = {
   MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30])
 };
 
+const SLOT_HEADER = {
+  SLOT_1_HEADER: new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
+  SLOT_2_HEADER: new Buffer([0x5E, 0xAB ,0x58, 0x12]),
+  SLOT_3_HEADER: new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
+  SLOT_4_HEADER: new Buffer([0x72, 0xCA, 0x56, 0xFC]),
+  SLOT_5_HEADER: new Buffer([0xD1, 0x5F, 0x32 ,0x62]),
+  SLOT_6_HEADER: new Buffer([0x47, 0x6F, 0x35, 0x15]),
+  SLOT_7_HEADER: new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
+  SLOT_8_HEADER: new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
+  SLOT_9_HEADER: new Buffer([0xFA, 0x13, 0x84, 0x6B]),
+  SLOT_10_HEADER: new Buffer([0x6C, 0x23, 0x83, 0x1C]),
+  SLOT_11_HEADER: new Buffer([0xF4, 0x14, 0x18, 0xAA]),
+  SLOT_12_HEADER: new Buffer([0x62, 0x24, 0x1F, 0xDD])
+};
+
 const ACTOR_DATA = {
   ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
   LEADER_NAME: new Buffer([0x5F, 0x5E, 0xCD, 0xE8]),
@@ -103,13 +118,25 @@ module.exports.parse = (buffer, options) => {
 
     const info = parseEntry(buffer, state);
 
-    if (info.marker.equals(START_ACTOR)) {
-      curActor = {
-        pos: state.pos,
-        data: {}
-      };
+    const tryAddActor = (key, marker) => {
+      if (info.marker.equals(marker)) {
+        curActor = {
+          pos: state.pos,
+          data: {}
+        };
 
-      parsed.ACTORS.push(curActor);
+        curActor.data[key] = info;
+
+        parsed.ACTORS.push(curActor);
+      }
+    };
+
+    for (let key in SLOT_HEADER) {
+      tryAddActor(key, SLOT_HEADER[key]);
+    }
+
+    if (!curActor && info.marker.equals(START_ACTOR)) {
+      tryAddActor('START_ACTOR', START_ACTOR);
     } else if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
       curActor = null;
     } else {
@@ -139,7 +166,9 @@ module.exports.parse = (buffer, options) => {
   let fullCivs = [];
 
   for (let actor of _.clone(parsed.ACTORS)) {
-    if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
+    if (!actor.data.ACTOR_TYPE) {
+      _.pull(parsed.ACTORS, actor);
+    } else if (actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV') {
       fullCivs.push(actor);
       _.pull(parsed.ACTORS, actor);
     }
@@ -187,6 +216,9 @@ function writeValue(marker, type, value) {
   switch (type) {
     case 2:
       return writeInt(marker, value);
+
+    case 0x0A:
+      return writeArrayLen(marker, value);
 
     case 5:
       return writeString(marker, value);
@@ -251,11 +283,11 @@ function parseEntry(buffer, state) {
         break;
 
       case 2:
+      case 0x0A: // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
         result.data = readInt(buffer, state);
         break;
 
       case 3:
-      case 0x0A:
         result.data = 'UNKNOWN!';
         state.pos += 12;
         break;
@@ -400,6 +432,13 @@ function writeInt(marker, value) {
   valueBuffer.writeUInt32LE(value);
 
   return Buffer.concat([marker, new Buffer([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
+}
+
+function writeArrayLen(marker, value) {
+  const valueBuffer = Buffer.alloc(4);
+  valueBuffer.writeUInt32LE(value);
+
+  return Buffer.concat([marker, new Buffer([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function readCompressedData(buffer, state, filename) {
