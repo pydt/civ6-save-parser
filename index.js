@@ -61,6 +61,16 @@ module.exports.MARKERS = {
   START_ACTOR, END_UNCOMPRESSED, COMPRESSED_DATA_END, GAME_DATA, ACTOR_DATA
 };
 
+const DATA_TYPES = {
+  BOOLEAN: 1,
+  INTEGER: 2,
+  STRING: 5,
+  UTF_STRING: 6,
+  ARRAY_START: 0x0A
+};
+
+module.exports.DATA_TYPES = DATA_TYPES;
+
 module.exports.parse = (buffer, options) => {
   options = options || {};
 
@@ -176,19 +186,19 @@ module.exports.parse = (buffer, options) => {
   };
 };
 
-module.exports.addChunk = (chunks, afterData, marker, type, value) => {
+module.exports.addChunk = (chunks, after, marker, type, value) => {
   const newChunk = writeValue(marker, type, value);
-  const chunkIndex = chunks.indexOf(afterData.chunk) + 1;
+  const chunkIndex = chunks.indexOf(after.chunk) + 1;
   chunks.splice(chunkIndex, 0, newChunk);
 };
 
-module.exports.modifyChunk = (chunks, parsedData, newValue) => {
-  const chunkIndex = chunks.indexOf(parsedData.chunk);
-  chunks[chunkIndex] = parsedData.chunk = writeValue(parsedData.marker, parsedData.type, newValue);
+module.exports.modifyChunk = (chunks, toModify, newValue) => {
+  const chunkIndex = chunks.indexOf(toModify.chunk);
+  chunks[chunkIndex] = toModify.chunk = writeValue(toModify.marker, toModify.type, newValue);
 };
 
-module.exports.deleteChunk = (chunks, parsedData) => {
-  _.pull(chunks, parsedData.chunk);
+module.exports.deleteChunk = (chunks, toDelete) => {
+  _.pull(chunks, toDelete.chunk);
 }
 
 if (!module.parent) {
@@ -206,13 +216,13 @@ if (!module.parent) {
 
 function writeValue(marker, type, value) {
   switch (type) {
-    case 2:
+    case DATA_TYPES.INTEGER:
       return writeInt(marker, value);
 
-    case 0x0A:
+    case DATA_TYPES.ARRAY_START:
       return writeArrayLen(marker, value);
 
-    case 5:
+    case DATA_TYPES.STRING:
       return writeString(marker, value);
 
     default:
@@ -259,7 +269,6 @@ function readState(buffer, state) {
 
 function parseEntry(buffer, state) {
   const result = {
-    pos: state.pos,
     marker: state.next4,
     type: buffer.readUInt32LE(state.pos + 4)
   };
@@ -270,12 +279,12 @@ function parseEntry(buffer, state) {
     result.data = 'SKIP';
   } else {
     switch (result.type) {
-      case 1:
+      case DATA_TYPES.BOOLEAN:
         result.data = readBoolean(buffer, state);
         break;
 
-      case 2:
-      case 0x0A: // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
+      case DATA_TYPES.INTEGER:
+      case DATA_TYPES.ARRAY_START: // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
         result.data = readInt(buffer, state);
         break;
 
@@ -295,11 +304,11 @@ function parseEntry(buffer, state) {
         break;
 
       case 4:
-      case 5:
+      case DATA_TYPES.STRING:
         result.data = readString(buffer, state);
         break;
 
-      case 6:
+      case DATA_TYPES.UTF_STRING:
         result.data = readUtfString(buffer, state);
         break;
 
