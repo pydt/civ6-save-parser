@@ -113,12 +113,8 @@ module.exports.parse = (buffer, options) => {
 
     const tryAddActor = (key, marker) => {
       if (info.marker.equals(marker)) {
-        curActor = {
-          pos: state.pos,
-          data: {}
-        };
-
-        curActor.data[key] = info;
+        curActor = {};
+        curActor[key] = info;
 
         parsed.ACTORS.push(curActor);
       }
@@ -142,7 +138,7 @@ module.exports.parse = (buffer, options) => {
       if (curActor) {
         for (let key in ACTOR_DATA) {
           if (info.marker.equals(ACTOR_DATA[key])) {
-            curActor.data[key] = info;
+            curActor[key] = info;
           }
         }
       }
@@ -158,10 +154,10 @@ module.exports.parse = (buffer, options) => {
 
   for (let curMarker of SLOT_HEADERS) {
     const curCiv = _.find(parsed.ACTORS, actor => {
-      return actor.data.SLOT_HEADER &&
-        actor.data.SLOT_HEADER.marker.equals(curMarker) &&
-        actor.data.ACTOR_TYPE &&
-        actor.data.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
+      return actor.SLOT_HEADER &&
+        actor.SLOT_HEADER.marker.equals(curMarker) &&
+        actor.ACTOR_TYPE &&
+        actor.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
     });
 
     if (curCiv) {
@@ -171,7 +167,7 @@ module.exports.parse = (buffer, options) => {
   }
 
   for (let actor of _.clone(parsed.ACTORS)) {
-    if (!actor.data.ACTOR_TYPE) {
+    if (!actor.ACTOR_TYPE) {
       _.pull(parsed.ACTORS, actor);
     }
   }

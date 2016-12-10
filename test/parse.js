@@ -25,18 +25,18 @@ describe('Parse Cathy Save', () => {
   });
 
   it('is player 1\'s turn', () => {
-    expect(parsed.CIVS[0].data.IS_CURRENT_TURN.data).to.equal(true);
+    expect(parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(true);
     expect(parsedSimple.CIVS[0].IS_CURRENT_TURN).to.equal(true);
 
     for (let i = 1; i < parsed.CIVS.length; i++) {
-      expect(parsed.CIVS[i].data).to.not.have.property('IS_CURRENT_TURN'); // AMBIGUOUS - in this case, the value does not exist at all in the file
+      expect(parsed.CIVS[i]).to.not.have.property('IS_CURRENT_TURN'); // AMBIGUOUS - in this case, the value does not exist at all in the file
       expect(parsedSimple.CIVS[i].IS_CURRENT_TURN).to.not.be.ok;
     }
   });
 
   it('should have civs in the correct order', () => {
     for (let i = 0; i < parsed.CIVS.length; i++) {
-      expect(parsed.CIVS[i].data.PLAYER_NAME.data).to.equal('Player ' + (i + 1));
+      expect(parsed.CIVS[i].PLAYER_NAME.data).to.equal('Player ' + (i + 1));
       expect(parsedSimple.CIVS[i].PLAYER_NAME).to.equal('Player ' + (i + 1));
     }
   });
@@ -64,12 +64,12 @@ describe('Parse 144', () => {
   });
 
   it('should be player 3\'s turn', () => {
-    expect(parsed.CIVS[2].data.IS_CURRENT_TURN.data).to.equal(true);
+    expect(parsed.CIVS[2].IS_CURRENT_TURN.data).to.equal(true);
     expect(parsedSimple.CIVS[2].IS_CURRENT_TURN).to.equal(true);
 
     for (let i = 0; i < parsed.CIVS.length; i++) {
       if (i != 2) {
-        expect(parsed.CIVS[i].data.IS_CURRENT_TURN.data).to.equal(false); // AMBIGUOUS - in this case, the value exists in the file and is false
+        expect(parsed.CIVS[i].IS_CURRENT_TURN.data).to.equal(false); // AMBIGUOUS - in this case, the value exists in the file and is false
         expect(parsedSimple.CIVS[i].IS_CURRENT_TURN).to.not.be.ok;
       }
     }
