@@ -133,3 +133,12 @@ describe('Parse 12 Peeps Save', () => {
     expect(parsedSimple.CIVS[11].LEADER_NAME).to.equal('LEADER_PERICLES');
   });
 });
+
+describe('Parse User Marker Bug Save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/UserMarkerBug.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 6 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(6);
+  });
+});

@@ -110,6 +110,7 @@ module.exports.parse = (buffer, options) => {
     }
 
     const info = parseEntry(buffer, state);
+    //console.log(info);
 
     const tryAddActor = (key, marker) => {
       if (info.marker.equals(marker)) {
@@ -271,7 +272,7 @@ function parseEntry(buffer, state) {
 
   state.pos += 8;
 
-  if (result.marker.readUInt32LE() < 256) {
+  if (result.marker.readUInt32LE() < 256 || result.type === 0) {
     result.data = 'SKIP';
   } else {
     switch (result.type) {
@@ -318,7 +319,7 @@ function parseEntry(buffer, state) {
         break;
 
       default:
-        throw new Error('Error parsing: ' + JSON.stringify(result));
+        throw new Error('Error parsing at position ' + state.pos + ': ' + JSON.stringify(result));
     }
   }
 
