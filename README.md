@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/omni-resources/civ6-save-parser.svg?branch=master)](https://travis-ci.org/omni-resources/civ6-save-parser)
+[![Build Status](https://travis-ci.org/pydt/civ6-save-parser.svg?branch=master)](https://travis-ci.org/pydt/civ6-save-parser)
 
 # Civ 6 Save File Parser
 
