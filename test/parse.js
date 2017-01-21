@@ -142,3 +142,12 @@ describe('Parse User Marker Bug Save', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
   });
 });
+
+describe('Parse another file that broke things', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/000002.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 6 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(6);
+  });
+})

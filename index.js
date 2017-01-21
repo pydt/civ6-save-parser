@@ -310,6 +310,7 @@ function parseEntry(buffer, state) {
         break;
 
       case 0x14:
+      case 0x0D:
         result.data = 'UNKNOWN!';
         state.pos += 16;
         break;
