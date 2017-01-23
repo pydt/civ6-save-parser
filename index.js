@@ -16,6 +16,8 @@ const fs = require('fs');
 const path = require('path');
 const util = require('util');
 const zlib = require('zlib');
+const iconv = require('iconv-lite');
+const diacritics = require('diacritics');
 
 const START_ACTOR = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
@@ -386,10 +388,11 @@ function readArray(buffer, state) {
 }
 
 function writeString(marker, newValue) {
+  const safeValue = iconv.encode(diacritics.remove(newValue), 'ascii');
   const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
-  strLenBuffer.writeUInt16LE(newValue.length + 1, 0);
+  strLenBuffer.writeUInt16LE(safeValue.length + 1, 0);
 
-  return Buffer.concat([marker, new Buffer([5, 0, 0, 0]), strLenBuffer, myBufferFrom(newValue), new Buffer([0])]);
+  return Buffer.concat([marker, new Buffer([5, 0, 0, 0]), strLenBuffer, myBufferFrom(safeValue), new Buffer([0])]);
 }
 
 function readUtfString(buffer, state) {

@@ -20,6 +20,14 @@ describe('Modify Cathy Save', function() {
     expect(data.parsed.CIVS[2].PLAYER_NAME.data).to.equal('Mike Rosack 2');
   });
 
+  it('should be able to set a non-ascii player name and have it safely save', () => {
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].PLAYER_NAME, 'ϻĮЌẸ ŘỖŜÃČЌ');
+
+    data = civ6.parse(Buffer.concat(data.chunks));
+
+    expect(data.parsed.CIVS[0].PLAYER_NAME.data).to.equal('MI?E ROSAC?');
+  });
+
   it('should be able to add a password', () => {
     const headerLen0 = data.parsed.CIVS[0].SLOT_HEADER.data;
     civ6.addChunk(data.chunks, data.parsed.CIVS[0].PLAYER_NAME, civ6.MARKERS.ACTOR_DATA.PLAYER_PASSWORD, civ6.DATA_TYPES.STRING, 'password1');
