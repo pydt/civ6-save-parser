@@ -24,6 +24,21 @@ describe('Parse Cathy Save', () => {
     expect(parsedSimple.GAME_TURN).to.equal(1);
   });
 
+  it('has correct game speed', () => {
+    expect(parsed.GAME_SPEED.data).to.equal('GAMESPEED_ONLINE');
+    expect(parsedSimple.GAME_SPEED).to.equal('GAMESPEED_ONLINE');
+  });
+
+  it('has correct map size', () => {
+    expect(parsed.MAP_SIZE.data).to.equal('MAPSIZE_TINY');
+    expect(parsedSimple.MAP_SIZE).to.equal('MAPSIZE_TINY');
+  });
+
+  it('has correct map file', () => {
+    expect(parsed.MAP_FILE.data).to.equal('Pangaea.lua');
+    expect(parsedSimple.MAP_FILE).to.equal('Pangaea.lua');
+  });
+
   it('is player 1\'s turn', () => {
     expect(parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(true);
     expect(parsedSimple.CIVS[0].IS_CURRENT_TURN).to.equal(true);
