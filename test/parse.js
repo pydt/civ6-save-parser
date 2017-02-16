@@ -55,6 +55,13 @@ describe('Parse Cathy Save', () => {
       expect(parsedSimple.CIVS[i].PLAYER_NAME).to.equal('Player ' + (i + 1));
     }
   });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsed.CIVS.length; i++) {
+      expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
+  });
 });
 
 describe('Parse Hojo Save', () => {
@@ -65,6 +72,13 @@ describe('Parse Hojo Save', () => {
   it('should have 6 civs', () => {
     expect(parsed.CIVS.length).to.equal(6);
     expect(parsedSimple.CIVS.length).to.equal(6);
+  });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsed.CIVS.length; i++) {
+      expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
   });
 });
 
@@ -89,6 +103,13 @@ describe('Parse 144', () => {
       }
     }
   });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsed.CIVS.length; i++) {
+      expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
+  });
 });
 
 describe('Parse 203 Save', () => {
@@ -99,6 +120,13 @@ describe('Parse 203 Save', () => {
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
     expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsed.CIVS.length; i++) {
+      expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
   });
 });
 
@@ -147,6 +175,12 @@ describe('Parse 12 Peeps Save', () => {
     expect(parsedSimple.CIVS[11].ACTOR_NAME).to.equal('CIVILIZATION_GREECE');
     expect(parsedSimple.CIVS[11].LEADER_NAME).to.equal('LEADER_PERICLES');
   });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsedSimple.CIVS.length; i++) {
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
+  });
 });
 
 describe('Parse User Marker Bug Save', () => {
@@ -155,6 +189,12 @@ describe('Parse User Marker Bug Save', () => {
 
   it('should have 6 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
+  });
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsedSimple.CIVS.length; i++) {
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
   });
 });
 
@@ -165,4 +205,25 @@ describe('Parse another file that broke things', () => {
   it('should have 6 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
   });
-})
+
+  it('has all players alive', () => {
+    for (let i = 0; i < parsedSimple.CIVS.length; i++) {
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+    }
+  });
+});
+
+describe('charlie is dead', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/charlieisdead.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 4 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+
+  it('says charlie is dead', () => {
+    for (let i = 0; i < parsedSimple.CIVS.length; i++) {
+      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(i > 0); // charlie is player 0
+    }
+  });
+});
