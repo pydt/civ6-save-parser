@@ -5,63 +5,70 @@ const expect = require('chai').expect;
 const civ6 = require('../index.js');
 
 describe('Parse Cathy Save', () => {
-  const buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
-  const parsed = civ6.parse(buffer).parsed;
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const files = [
+    'test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save',
+    'test/saves/CATHERINE DE MEDICI 1 4000 BC_AU.Civ6Save'
+  ];
 
-  it('should have 4 civs', () => {
-    expect(parsed.CIVS.length).to.equal(4);
-    expect(parsedSimple.CIVS.length).to.equal(4);
-  });
+  for (let file of files) {
+    const buffer = new Buffer(fs.readFileSync(file));
+    const parsed = civ6.parse(buffer).parsed;
+    const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
 
-  it('should have 7 actors', () => {
-    expect(parsed.ACTORS.length).to.equal(7);
-    expect(parsedSimple.ACTORS.length).to.equal(7);
-  });
+    it('should have 4 civs', () => {
+      expect(parsed.CIVS.length).to.equal(4);
+      expect(parsedSimple.CIVS.length).to.equal(4);
+    });
 
-  it('is game turn 1', () => {
-    expect(parsed.GAME_TURN.data).to.equal(1);
-    expect(parsedSimple.GAME_TURN).to.equal(1);
-  });
+    it('should have 7 actors', () => {
+      expect(parsed.ACTORS.length).to.equal(7);
+      expect(parsedSimple.ACTORS.length).to.equal(7);
+    });
 
-  it('has correct game speed', () => {
-    expect(parsed.GAME_SPEED.data).to.equal('GAMESPEED_ONLINE');
-    expect(parsedSimple.GAME_SPEED).to.equal('GAMESPEED_ONLINE');
-  });
+    it('is game turn 1', () => {
+      expect(parsed.GAME_TURN.data).to.equal(1);
+      expect(parsedSimple.GAME_TURN).to.equal(1);
+    });
 
-  it('has correct map size', () => {
-    expect(parsed.MAP_SIZE.data).to.equal('MAPSIZE_TINY');
-    expect(parsedSimple.MAP_SIZE).to.equal('MAPSIZE_TINY');
-  });
+    it('has correct game speed', () => {
+      expect(parsed.GAME_SPEED.data).to.equal('GAMESPEED_ONLINE');
+      expect(parsedSimple.GAME_SPEED).to.equal('GAMESPEED_ONLINE');
+    });
 
-  it('has correct map file', () => {
-    expect(parsed.MAP_FILE.data).to.equal('Pangaea.lua');
-    expect(parsedSimple.MAP_FILE).to.equal('Pangaea.lua');
-  });
+    it('has correct map size', () => {
+      expect(parsed.MAP_SIZE.data).to.equal('MAPSIZE_TINY');
+      expect(parsedSimple.MAP_SIZE).to.equal('MAPSIZE_TINY');
+    });
 
-  it('is player 1\'s turn', () => {
-    expect(parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(true);
-    expect(parsedSimple.CIVS[0].IS_CURRENT_TURN).to.equal(true);
+    it('has correct map file', () => {
+      expect(parsed.MAP_FILE.data).to.equal('Pangaea.lua');
+      expect(parsedSimple.MAP_FILE).to.equal('Pangaea.lua');
+    });
 
-    for (let i = 1; i < parsed.CIVS.length; i++) {
-      expect(parsed.CIVS[i]).to.not.have.property('IS_CURRENT_TURN'); // AMBIGUOUS - in this case, the value does not exist at all in the file
-      expect(parsedSimple.CIVS[i].IS_CURRENT_TURN).to.not.be.ok;
-    }
-  });
+    it('is player 1\'s turn', () => {
+      expect(parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(true);
+      expect(parsedSimple.CIVS[0].IS_CURRENT_TURN).to.equal(true);
 
-  it('should have civs in the correct order', () => {
-    for (let i = 0; i < parsed.CIVS.length; i++) {
-      expect(parsed.CIVS[i].PLAYER_NAME.data).to.equal('Player ' + (i + 1));
-      expect(parsedSimple.CIVS[i].PLAYER_NAME).to.equal('Player ' + (i + 1));
-    }
-  });
+      for (let i = 1; i < parsed.CIVS.length; i++) {
+        expect(parsed.CIVS[i]).to.not.have.property('IS_CURRENT_TURN'); // AMBIGUOUS - in this case, the value does not exist at all in the file
+        expect(parsedSimple.CIVS[i].IS_CURRENT_TURN).to.not.be.ok;
+      }
+    });
 
-  it('has all players alive', () => {
-    for (let i = 0; i < parsed.CIVS.length; i++) {
-      expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
-      expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
-    }
-  });
+    it('should have civs in the correct order', () => {
+      for (let i = 0; i < parsed.CIVS.length; i++) {
+        expect(parsed.CIVS[i].PLAYER_NAME.data).to.equal('Player ' + (i + 1));
+        expect(parsedSimple.CIVS[i].PLAYER_NAME).to.equal('Player ' + (i + 1));
+      }
+    });
+
+    it('has all players alive', () => {
+      for (let i = 0; i < parsed.CIVS.length; i++) {
+        expect(parsed.CIVS[i].PLAYER_ALIVE.data).to.equal(true);
+        expect(parsedSimple.CIVS[i].PLAYER_ALIVE).to.equal(true);
+      }
+    });
+  }
 });
 
 describe('Parse Hojo Save', () => {

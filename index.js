@@ -324,6 +324,12 @@ function parseEntry(buffer, state) {
       case 0x0B:
         result.data = readArray(buffer, state);
         break;
+      
+      case 0x18:
+        // compressed data, skip for now...
+        result.data = 'UNKNOWN COMPRESSED DATA';
+        state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
+        break;
 
       default:
         throw new Error('Error parsing at position ' + state.pos + ': ' + JSON.stringify(result));
