@@ -234,3 +234,12 @@ describe('charlie is dead', () => {
     }
   });
 });
+
+describe('Parse save with 3 byte string length', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/000377.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 10 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(10);
+  });
+});
