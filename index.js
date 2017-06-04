@@ -20,6 +20,8 @@ const iconv = require('iconv-lite');
 const diacritics = require('diacritics');
 
 const START_ACTOR = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
+const ZLIB_HEADER = new Buffer([0x78, 0x9C]);
+const WEIRD_OUTBACK_TYCOON_MARKER = new Buffer([1, 0xDB, 0x89, 0x32]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
 const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
 
@@ -156,7 +158,9 @@ module.exports.parse = (buffer, options) => {
     chunkStart = state.pos;
   } while (null !== (state = readState(buffer, state)));
 
-  chunks.push(buffer.slice(state.pos));
+  if (state) {
+    chunks.push(buffer.slice(state.pos));
+  }
 
   for (let curMarker of SLOT_HEADERS) {
     const curCiv = _.find(parsed.ACTORS, actor => {
@@ -270,15 +274,25 @@ function readState(buffer, state) {
 }
 
 function parseEntry(buffer, state) {
+  const typeBuffer = buffer.slice(state.pos + 4, state.pos + 8);
+  
   const result = {
     marker: state.next4,
-    type: buffer.readUInt32LE(state.pos + 4)
+    type: typeBuffer.readUInt32LE()
   };
 
   state.pos += 8;
 
   if (result.marker.readUInt32LE() < 256 || result.type === 0) {
     result.data = 'SKIP';
+  } else if (result.marker.equals(WEIRD_OUTBACK_TYCOON_MARKER)) {
+    // Not sure what this is at the end of outback tycoon files, just quit processing at this point
+    result.data = 'UNKNOWN DATA AT END OF OUTBACK';
+    state.pos = buffer.length;
+  } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
+    // compressed data, skip for now...
+    result.data = 'UNKNOWN COMPRESSED DATA';
+    state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
   } else {
     switch (result.type) {
       case DATA_TYPES.BOOLEAN:
@@ -322,12 +336,6 @@ function parseEntry(buffer, state) {
 
       case 0x0B:
         result.data = readArray(buffer, state);
-        break;
-      
-      case 0x18:
-        // compressed data, skip for now...
-        result.data = 'UNKNOWN COMPRESSED DATA';
-        state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
         break;
 
       default:

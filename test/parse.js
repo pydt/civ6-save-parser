@@ -243,3 +243,12 @@ describe('Parse save with 3 byte string length', () => {
     expect(parsedSimple.CIVS.length).to.equal(10);
   });
 });
+
+describe('Parse Outback Tycoon save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/OutbackTycoon.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 4 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+});
