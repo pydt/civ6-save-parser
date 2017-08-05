@@ -167,7 +167,8 @@ module.exports.parse = (buffer, options) => {
       return actor.SLOT_HEADER &&
         actor.SLOT_HEADER.marker.equals(curMarker) &&
         actor.ACTOR_TYPE &&
-        actor.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV';
+        actor.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV' &&
+        actor.ACTOR_NAME
     });
 
     if (curCiv) {
@@ -177,7 +178,7 @@ module.exports.parse = (buffer, options) => {
   }
 
   for (let actor of _.clone(parsed.ACTORS)) {
-    if (!actor.ACTOR_TYPE) {
+    if (!actor.ACTOR_TYPE || !actor.ACTOR_NAME) {
       _.pull(parsed.ACTORS, actor);
     }
   }

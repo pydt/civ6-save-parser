@@ -252,3 +252,12 @@ describe('Parse Outback Tycoon save', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
   });
 });
+
+describe('Parse save file with empty slots', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/emptycivslots.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 4 civs (not 6!)', () => {
+    expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+});
