@@ -261,3 +261,13 @@ describe('Parse save file with empty slots', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
   });
 });
+
+describe('Parse file with string longer than null terminator', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/nullterminator.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+
+  it('should have 6 civs and #3 should be victoria', () => {
+    expect(parsedSimple.CIVS.length).to.equal(6);
+    expect(parsedSimple.CIVS[2].LEADER_NAME).to.equal('LEADER_VICTORIA');
+  });
+})

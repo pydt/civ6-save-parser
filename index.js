@@ -363,7 +363,9 @@ function readString(buffer, state) {
     result = 'Don\'t know what this kind of string is...';
   } else if (strInfo[1] === 0x21) {
     state.pos += 6;
-    result = buffer.slice(state.pos, state.pos + strLen - 1).toString(); // Ignore null terminator
+    // Instead of assuming string length is actually length of chunk, find our null terminator in the string...
+    const nullTerm = buffer.indexOf(0, state.pos) - state.pos;
+    result = buffer.slice(state.pos, state.pos + nullTerm).toString();
     state.pos += strLen;
   }
 
