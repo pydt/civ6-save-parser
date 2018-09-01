@@ -93,7 +93,7 @@ module.exports.parse = (buffer, options) => {
   let state = readState(buffer);
 
   if (state.next4.toString() !== 'CIV6') {
-    throw new Error('Not a Civilzation 6 save file. :(');
+    throw new Error('Not a Civilization 6 save file. :(');
   }
 
   while (null !== (state = readState(buffer, state))) {
@@ -110,7 +110,7 @@ module.exports.parse = (buffer, options) => {
   do {
     if (state.next4.equals(END_UNCOMPRESSED)) {
       if (options.outputCompressed) {
-        readCompressedData(buffer, state, path.basename(filename) + '.bin');
+        readCompressedData(buffer, state, path.basename(options._[0]) + '.bin');
       }
 
       break;
@@ -467,7 +467,7 @@ function writeArrayLen(marker, value) {
 
 function readCompressedData(buffer, state, filename) {
   const compressedData = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos));
-  const uncompressedData = zlib.unzipSync(compressedData);
+  const uncompressedData = zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
   fs.writeFileSync(filename, uncompressedData);
 }
 
