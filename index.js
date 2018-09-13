@@ -89,6 +89,7 @@ module.exports.parse = (buffer, options) => {
   const chunks = [];
   let chunkStart = 0;
   let curActor;
+  let compressed;
 
   let state = readState(buffer);
 
@@ -110,7 +111,7 @@ module.exports.parse = (buffer, options) => {
   do {
     if (state.next4.equals(END_UNCOMPRESSED)) {
       if (options.outputCompressed) {
-        readCompressedData(buffer, state, path.basename(options._[0]) + '.bin');
+        compressed = readCompressedData(buffer, state);
       }
 
       break;
@@ -188,8 +189,9 @@ module.exports.parse = (buffer, options) => {
   }
 
   return {
-    parsed: parsed,
-    chunks: chunks
+    parsed,
+    chunks,
+    compressed
   };
 };
 
@@ -216,6 +218,10 @@ if (!module.parent) {
     const buffer = new Buffer(fs.readFileSync(argv._[0]));
     const result = module.exports.parse(buffer, argv);
     console.log(util.inspect(result.parsed, false, null));
+
+    if (argv.outputCompressed) {
+      fs.writeFileSync(path.basename(argv._[0]) + '.bin', result.compressed);
+    }
   }
 }
 
@@ -465,29 +471,9 @@ function writeArrayLen(marker, value) {
   return Buffer.concat([marker, new Buffer([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
 }
 
-function readCompressedData(buffer, state, filename) {
+function readCompressedData(buffer, state) {
   const compressedData = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos));
-
-  const decompressStream = zlib.createUnzip()
-    .on('data', function (chunk) {
-      fs.appendFileSync(filename, chunk);
-    })
-    .on('end', function() {
-      console.log('End of stream, never get here?');
-    })
-    .on('error', function(err) {
-      console.err(err);
-    });
-  
-  fs.writeFileSync(filename, []);
-
-  decompressStream.write(compressedData, err => {
-    if (err) {
-      console.err(err);
-    } else {
-      console.log('done writing compressed data');
-    }
-  });
+  return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
 }
 
 function myBufferFrom(source) {
