@@ -485,7 +485,7 @@ function readCompressedData(buffer, state) {
   }
   const compressedData = Buffer.concat(chunks);
 
-  return zlib.unzipSync(compressedData, { finishFlush: zlib.constants.Z_SYNC_FLUSH });
+  return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
 }
 
 function myBufferFrom(source) {
