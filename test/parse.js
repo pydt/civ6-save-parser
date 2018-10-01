@@ -273,18 +273,12 @@ describe('Parse file with string longer than null terminator', () => {
 });
 
 describe('Test decompression', () => {
-  it('Sometimes works and sometimes doesn\'t, wish I knew why...', () => {
-    const badSaves = ['000144.Civ6Save', 'HŌJŌ TOKIMUNE 341 1920 d. C..Civ6Save'];
-
+  it('should work with all save files', () => {
     for (const save of fs.readdirSync('test/saves')) {
       const buffer = new Buffer(fs.readFileSync('test/saves/' + save));
       const parseFunc = () => civ6.parse(buffer, { outputCompressed: true });
   
-      if (badSaves.indexOf(save) >= 0) {
-        expect(parseFunc, save).to.throw();
-      } else {
-        expect(parseFunc, save).to.not.throw();
-      }
+      expect(parseFunc, save).to.not.throw();
     }
   });
 });

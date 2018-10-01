@@ -472,7 +472,19 @@ function writeArrayLen(marker, value) {
 }
 
 function readCompressedData(buffer, state) {
-  const compressedData = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos));
+  const data = buffer.slice(state.pos + 4,
+                            buffer.indexOf(COMPRESSED_DATA_END, state.pos) + COMPRESSED_DATA_END.length);
+
+  // drop 4 bytes away after every chunk
+  const chunkSize = 64 * 1024;
+  const chunks = [];
+  let pos = 0;
+  while (pos < data.length) {
+      chunks.push(data.slice(pos, pos + chunkSize));
+      pos += chunkSize + 4;
+  }
+  const compressedData = Buffer.concat(chunks);
+
   return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
 }
 
