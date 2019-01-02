@@ -1,18 +1,20 @@
 'use strict';
 
+/* eslint-disable max-len */
+
 const fs = require('fs');
 const expect = require('chai').expect;
 const civ6 = require('../index.js');
 
 describe('Modify Cathy Save', function() {
-  let buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
+  const buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
   let data = civ6.parse(buffer);
 
   it('should be able to change player names in any order', () => {
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].PLAYER_NAME, 'Mike Rosack 0');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[2].PLAYER_NAME, 'Mike Rosack 2');
     civ6.modifyChunk(data.chunks, data.parsed.CIVS[1].PLAYER_NAME, 'Mike Rosack 1');
-    
+
     data = civ6.parse(Buffer.concat(data.chunks));
 
     expect(data.parsed.CIVS[0].PLAYER_NAME.data).to.equal('Mike Rosack 0');
@@ -64,7 +66,7 @@ describe('Modify Cathy Save', function() {
     expect(data.parsed.CIVS[1].ACTOR_AI_HUMAN.data).to.equal(1);
   });
 
-  /*it('writes the modified save file for debugging purposes', () => {
+  /* it('writes the modified save file for debugging purposes', () => {
     fs.writeFileSync('test/saves/modified.Civ6Save', Buffer.concat(data.chunks));
   });*/
 });

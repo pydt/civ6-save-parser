@@ -4,7 +4,7 @@
   "description": "Parses Civilization VI Save Files.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "eslint . && mocha"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,8 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "eslint": "^5.11.1",
+    "eslint-config-google": "^0.11.0",
     "mocha": "^5.2.0"
   },
   "files": [

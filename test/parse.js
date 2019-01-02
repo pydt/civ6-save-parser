@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable max-len */
+
 const fs = require('fs');
 const expect = require('chai').expect;
 const civ6 = require('../index.js');
@@ -7,13 +9,13 @@ const civ6 = require('../index.js');
 describe('Parse Cathy Save', () => {
   const files = [
     'test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save',
-    'test/saves/CATHERINE DE MEDICI 1 4000 BC_AU.Civ6Save'
+    'test/saves/CATHERINE DE MEDICI 1 4000 BC_AU.Civ6Save',
   ];
 
-  for (let file of files) {
+  for (const file of files) {
     const buffer = new Buffer(fs.readFileSync(file));
     const parsed = civ6.parse(buffer).parsed;
-    const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+    const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
     it('should have 4 civs', () => {
       expect(parsed.CIVS.length).to.equal(4);
@@ -74,7 +76,7 @@ describe('Parse Cathy Save', () => {
 describe('Parse Hojo Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/HŌJŌ TOKIMUNE 341 1920 d. C..Civ6Save'));
   const parsed = civ6.parse(buffer).parsed;
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 6 civs', () => {
     expect(parsed.CIVS.length).to.equal(6);
@@ -92,7 +94,7 @@ describe('Parse Hojo Save', () => {
 describe('Parse 144', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000144.Civ6Save'));
   const parsed = civ6.parse(buffer).parsed;
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
@@ -104,7 +106,7 @@ describe('Parse 144', () => {
     expect(parsedSimple.CIVS[2].IS_CURRENT_TURN).to.equal(true);
 
     for (let i = 0; i < parsed.CIVS.length; i++) {
-      if (i != 2) {
+      if (i !== 2) {
         expect(parsed.CIVS[i].IS_CURRENT_TURN.data).to.equal(false); // AMBIGUOUS - in this case, the value exists in the file and is false
         expect(parsedSimple.CIVS[i].IS_CURRENT_TURN).to.not.be.ok;
       }
@@ -122,7 +124,7 @@ describe('Parse 144', () => {
 describe('Parse 203 Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000203.Civ6Save'));
   const parsed = civ6.parse(buffer).parsed;
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 4 civs', () => {
     expect(parsed.CIVS.length).to.equal(4);
@@ -139,7 +141,7 @@ describe('Parse 203 Save', () => {
 
 describe('Parse 12 Peeps Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/12peeps.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 12 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(12);
@@ -148,7 +150,7 @@ describe('Parse 12 Peeps Save', () => {
   it('should have correct data for the 12 civs', () => {
     expect(parsedSimple.CIVS[0].ACTOR_NAME).to.equal('CIVILIZATION_FRANCE');
     expect(parsedSimple.CIVS[0].LEADER_NAME).to.equal('LEADER_CATHERINE_DE_MEDICI');
-    
+
     expect(parsedSimple.CIVS[1].ACTOR_NAME).to.equal('CIVILIZATION_EGYPT');
     expect(parsedSimple.CIVS[1].LEADER_NAME).to.equal('LEADER_CLEOPATRA');
 
@@ -157,28 +159,28 @@ describe('Parse 12 Peeps Save', () => {
 
     expect(parsedSimple.CIVS[3].ACTOR_NAME).to.equal('CIVILIZATION_INDIA');
     expect(parsedSimple.CIVS[3].LEADER_NAME).to.equal('LEADER_GANDHI');
-    
+
     expect(parsedSimple.CIVS[4].ACTOR_NAME).to.equal('CIVILIZATION_SUMERIA');
     expect(parsedSimple.CIVS[4].LEADER_NAME).to.equal('LEADER_GILGAMESH');
 
     expect(parsedSimple.CIVS[5].ACTOR_NAME).to.equal('CIVILIZATION_GREECE');
     expect(parsedSimple.CIVS[5].LEADER_NAME).to.equal('LEADER_GORGO');
-    
+
     expect(parsedSimple.CIVS[6].ACTOR_NAME).to.equal('CIVILIZATION_NORWAY');
     expect(parsedSimple.CIVS[6].LEADER_NAME).to.equal('LEADER_HARDRADA');
-    
+
     expect(parsedSimple.CIVS[7].ACTOR_NAME).to.equal('CIVILIZATION_JAPAN');
     expect(parsedSimple.CIVS[7].LEADER_NAME).to.equal('LEADER_HOJO');
-    
+
     expect(parsedSimple.CIVS[8].ACTOR_NAME).to.equal('CIVILIZATION_AZTEC');
     expect(parsedSimple.CIVS[8].LEADER_NAME).to.equal('LEADER_MONTEZUMA');
-    
+
     expect(parsedSimple.CIVS[9].ACTOR_NAME).to.equal('CIVILIZATION_KONGO');
     expect(parsedSimple.CIVS[9].LEADER_NAME).to.equal('LEADER_MVEMBA');
-    
+
     expect(parsedSimple.CIVS[10].ACTOR_NAME).to.equal('CIVILIZATION_BRAZIL');
     expect(parsedSimple.CIVS[10].LEADER_NAME).to.equal('LEADER_PEDRO');
-    
+
     expect(parsedSimple.CIVS[11].ACTOR_NAME).to.equal('CIVILIZATION_GREECE');
     expect(parsedSimple.CIVS[11].LEADER_NAME).to.equal('LEADER_PERICLES');
   });
@@ -192,7 +194,7 @@ describe('Parse 12 Peeps Save', () => {
 
 describe('Parse User Marker Bug Save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/UserMarkerBug.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 6 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
@@ -207,7 +209,7 @@ describe('Parse User Marker Bug Save', () => {
 
 describe('Parse another file that broke things', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000002.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 6 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
@@ -222,7 +224,7 @@ describe('Parse another file that broke things', () => {
 
 describe('charlie is dead', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/charlieisdead.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 4 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
@@ -237,7 +239,7 @@ describe('charlie is dead', () => {
 
 describe('Parse save with 3 byte string length', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/000377.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 10 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(10);
@@ -246,7 +248,7 @@ describe('Parse save with 3 byte string length', () => {
 
 describe('Parse Outback Tycoon save', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/OutbackTycoon.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 4 civs', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
@@ -255,7 +257,7 @@ describe('Parse Outback Tycoon save', () => {
 
 describe('Parse save file with empty slots', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/emptycivslots.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 4 civs (not 6!)', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
@@ -264,7 +266,7 @@ describe('Parse save file with empty slots', () => {
 
 describe('Parse file with string longer than null terminator', () => {
   const buffer = new Buffer(fs.readFileSync('test/saves/nullterminator.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, { simple: true }).parsed;
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
 
   it('should have 6 civs and #3 should be victoria', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
@@ -276,8 +278,8 @@ describe('Test decompression', () => {
   it('should work with all save files', () => {
     for (const save of fs.readdirSync('test/saves')) {
       const buffer = new Buffer(fs.readFileSync('test/saves/' + save));
-      const parseFunc = () => civ6.parse(buffer, { outputCompressed: true });
-  
+      const parseFunc = () => civ6.parse(buffer, {outputCompressed: true});
+
       expect(parseFunc, save).to.not.throw();
     }
   });

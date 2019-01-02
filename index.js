@@ -7,7 +7,7 @@ let useNewBuffer = false;
 
 try {
   Buffer.from('1337', 'hex');
-} catch(e) {
+} catch (e) {
   useNewBuffer = true;
 }
 
@@ -34,22 +34,22 @@ const GAME_DATA = {
   MOD_ID: new Buffer([0x54, 0x5F, 0xC4, 0x04]),
   MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30]),
   MAP_FILE: new Buffer([0x5A, 0x87, 0xD8, 0x63]),
-  MAP_SIZE: new Buffer([0x40, 0x5C, 0x83, 0x0B])
+  MAP_SIZE: new Buffer([0x40, 0x5C, 0x83, 0x0B]),
 };
 
 const SLOT_HEADERS = [
   new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
-  new Buffer([0x5E, 0xAB ,0x58, 0x12]),
+  new Buffer([0x5E, 0xAB, 0x58, 0x12]),
   new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
   new Buffer([0x72, 0xCA, 0x56, 0xFC]),
-  new Buffer([0xD1, 0x5F, 0x32 ,0x62]),
+  new Buffer([0xD1, 0x5F, 0x32, 0x62]),
   new Buffer([0x47, 0x6F, 0x35, 0x15]),
   new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
   new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
   new Buffer([0xFA, 0x13, 0x84, 0x6B]),
   new Buffer([0x6C, 0x23, 0x83, 0x1C]),
   new Buffer([0xF4, 0x14, 0x18, 0xAA]),
-  new Buffer([0x62, 0x24, 0x1F, 0xDD])
+  new Buffer([0x62, 0x24, 0x1F, 0xDD]),
 ];
 
 const ACTOR_DATA = {
@@ -60,12 +60,16 @@ const ACTOR_DATA = {
   PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
   PLAYER_ALIVE: new Buffer([0xA6, 0xDF, 0xA7, 0x62]),
   IS_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
-  ACTOR_AI_HUMAN: new Buffer([0x95, 0xB9, 0x42, 0xCE]),  // 3 = Human, 1 = AI
-  ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF])
+  ACTOR_AI_HUMAN: new Buffer([0x95, 0xB9, 0x42, 0xCE]), // 3 = Human, 1 = AI
+  ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF]),
 };
 
 module.exports.MARKERS = {
-  START_ACTOR, END_UNCOMPRESSED, COMPRESSED_DATA_END, GAME_DATA, ACTOR_DATA
+  START_ACTOR,
+  END_UNCOMPRESSED,
+  COMPRESSED_DATA_END,
+  GAME_DATA,
+  ACTOR_DATA,
 };
 
 const DATA_TYPES = {
@@ -73,7 +77,7 @@ const DATA_TYPES = {
   INTEGER: 2,
   STRING: 5,
   UTF_STRING: 6,
-  ARRAY_START: 0x0A
+  ARRAY_START: 0x0A,
 };
 
 module.exports.DATA_TYPES = DATA_TYPES;
@@ -83,7 +87,7 @@ module.exports.parse = (buffer, options) => {
 
   let parsed = {
     ACTORS: [],
-    CIVS: []
+    CIVS: [],
   };
 
   const chunks = [];
@@ -118,7 +122,7 @@ module.exports.parse = (buffer, options) => {
     }
 
     const info = parseEntry(buffer, state);
-    //console.log(info);
+    // console.log(info);
 
     const tryAddActor = (key, marker) => {
       if (info.marker.equals(marker)) {
@@ -129,7 +133,7 @@ module.exports.parse = (buffer, options) => {
       }
     };
 
-    for (let marker of SLOT_HEADERS) {
+    for (const marker of SLOT_HEADERS) {
       tryAddActor('SLOT_HEADER', marker);
     }
 
@@ -138,14 +142,14 @@ module.exports.parse = (buffer, options) => {
     } else if (info.marker.equals(ACTOR_DATA.ACTOR_DESCRIPTION)) {
       curActor = null;
     } else {
-      for (let key in GAME_DATA) {
+      for (const key in GAME_DATA) {
         if (info.marker.equals(GAME_DATA[key])) {
           parsed[key] = info;
         }
       }
 
       if (curActor) {
-        for (let key in ACTOR_DATA) {
+        for (const key in ACTOR_DATA) {
           if (info.marker.equals(ACTOR_DATA[key])) {
             curActor[key] = info;
           }
@@ -153,7 +157,7 @@ module.exports.parse = (buffer, options) => {
       }
     }
 
-    info.chunk = buffer.slice(chunkStart, state.pos); 
+    info.chunk = buffer.slice(chunkStart, state.pos);
     chunks.push(info.chunk);
 
     chunkStart = state.pos;
@@ -163,13 +167,13 @@ module.exports.parse = (buffer, options) => {
     chunks.push(buffer.slice(state.pos));
   }
 
-  for (let curMarker of SLOT_HEADERS) {
-    const curCiv = _.find(parsed.ACTORS, actor => {
+  for (const curMarker of SLOT_HEADERS) {
+    const curCiv = _.find(parsed.ACTORS, (actor) => {
       return actor.SLOT_HEADER &&
         actor.SLOT_HEADER.marker.equals(curMarker) &&
         actor.ACTOR_TYPE &&
         actor.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV' &&
-        actor.ACTOR_NAME
+        actor.ACTOR_NAME;
     });
 
     if (curCiv) {
@@ -178,7 +182,7 @@ module.exports.parse = (buffer, options) => {
     }
   }
 
-  for (let actor of _.clone(parsed.ACTORS)) {
+  for (const actor of _.clone(parsed.ACTORS)) {
     if (!actor.ACTOR_TYPE || !actor.ACTOR_NAME) {
       _.pull(parsed.ACTORS, actor);
     }
@@ -191,7 +195,7 @@ module.exports.parse = (buffer, options) => {
   return {
     parsed,
     chunks,
-    compressed
+    compressed,
   };
 };
 
@@ -208,10 +212,11 @@ module.exports.modifyChunk = (chunks, toModify, newValue) => {
 
 module.exports.deleteChunk = (chunks, toDelete) => {
   _.pull(chunks, toDelete.chunk);
-}
+};
 
 if (!module.parent) {
-  var argv = require('minimist')(process.argv.slice(2));
+  const argv = require('minimist')(process.argv.slice(2));
+
   if (!argv._.length) {
     console.log('Please pass the filename as the argument to the script.');
   } else {
@@ -250,7 +255,7 @@ function simplify(result) {
     mapFn = _.map;
   }
 
-  return mapFn(result, i =>{
+  return mapFn(result, (i) =>{
     if (i.data && !_.isObject(i.data)) {
       return i.data;
     }
@@ -267,7 +272,7 @@ function readState(buffer, state) {
   if (!state) {
     state = {
       pos: 0,
-      next4: buffer.slice(0, 4)
+      next4: buffer.slice(0, 4),
     };
   } else {
     if (state.pos >= buffer.length - 4) {
@@ -282,10 +287,10 @@ function readState(buffer, state) {
 
 function parseEntry(buffer, state) {
   const typeBuffer = buffer.slice(state.pos + 4, state.pos + 8);
-  
+
   const result = {
     marker: state.next4,
-    type: typeBuffer.readUInt32LE()
+    type: typeBuffer.readUInt32LE(),
   };
 
   state.pos += 8;
@@ -307,7 +312,8 @@ function parseEntry(buffer, state) {
         break;
 
       case DATA_TYPES.INTEGER:
-      case DATA_TYPES.ARRAY_START: // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
+      // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
+      case DATA_TYPES.ARRAY_START:
         result.data = readInt(buffer, state);
         break;
 
@@ -363,7 +369,7 @@ function readString(buffer, state) {
   state.pos += 2;
 
   const strInfo = buffer.slice(state.pos, state.pos + 6);
-  //new Buffer([0, 0x21, 1, 0, 0, 0]))
+  // new Buffer([0, 0x21, 1, 0, 0, 0]))
   if (strInfo[1] === 0 || strInfo[1] === 0x20) {
     state.pos += 10;
     result = 'Don\'t know what this kind of string is...';
@@ -384,14 +390,14 @@ function readString(buffer, state) {
 
 function readArray(buffer, state) {
   const origState = _.clone(state);
-  let result = [];
+  const result = [];
 
   state.pos += 8;
   const arrayLen = buffer.readUInt32LE(state.pos);
   state.pos += 4;
 
   for (let i = 0; i < arrayLen; i++) {
-    if (buffer[state.pos] != 0x0A) {
+    if (buffer[state.pos] !== 0x0A) {
       throw new Error('Error reading array: ' + JSON.stringify(origState));
     }
 
@@ -404,12 +410,12 @@ function readArray(buffer, state) {
       state = readState(buffer, state);
       info = parseEntry(buffer, state);
 
-      for (let key in GAME_DATA) {
+      for (const key in GAME_DATA) {
         if (info.marker.equals(GAME_DATA[key])) {
           curData[key] = info;
         }
       }
-    } while (info.data != "1");
+    } while (info.data !== '1');
   }
 
   return result;
@@ -472,26 +478,25 @@ function writeArrayLen(marker, value) {
 }
 
 function readCompressedData(buffer, state) {
-  const data = buffer.slice(state.pos + 4,
-                            buffer.indexOf(COMPRESSED_DATA_END, state.pos) + COMPRESSED_DATA_END.length);
+  const data = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos) + COMPRESSED_DATA_END.length);
 
   // drop 4 bytes away after every chunk
   const chunkSize = 64 * 1024;
   const chunks = [];
   let pos = 0;
   while (pos < data.length) {
-      chunks.push(data.slice(pos, pos + chunkSize));
-      pos += chunkSize + 4;
+    chunks.push(data.slice(pos, pos + chunkSize));
+    pos += chunkSize + 4;
   }
   const compressedData = Buffer.concat(chunks);
 
-  return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
+  return zlib.unzipSync(compressedData, {finishFlush: zlib.Z_SYNC_FLUSH});
 }
 
 function myBufferFrom(source) {
   if (useNewBuffer) {
     return new Buffer(source);
   }
-  
+
   return Buffer.from(source);
 }
