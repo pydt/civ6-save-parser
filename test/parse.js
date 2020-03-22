@@ -246,13 +246,17 @@ describe('Parse save with 3 byte string length', () => {
   });
 });
 
-describe('Parse Outback Tycoon save', () => {
-  const buffer = new Buffer(fs.readFileSync('test/saves/OutbackTycoon.Civ6Save'));
-  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
+describe('Parse Outback Tycoon saves', () => {
+  const files = ['test/saves/OutbackTycoon.Civ6Save', 'test/saves/OutbackTycoon2.Civ6Save'];
 
-  it('should have 4 civs', () => {
-    expect(parsedSimple.CIVS.length).to.equal(4);
-  });
+  for (const file of files) {
+    const buffer = new Buffer(fs.readFileSync(file));
+    const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
+
+    it(file + ' should have 4 civs', () => {
+      expect(parsedSimple.CIVS.length).to.equal(4);
+    });
+  }
 });
 
 describe('Parse save file with empty slots', () => {

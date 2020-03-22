@@ -21,7 +21,6 @@ const diacritics = require('diacritics');
 
 const START_ACTOR = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
 const ZLIB_HEADER = new Buffer([0x78, 0x9C]);
-const WEIRD_OUTBACK_TYCOON_MARKER = new Buffer([1, 0xDB, 0x89, 0x32]);
 const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
 const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
 
@@ -297,14 +296,11 @@ function parseEntry(buffer, state) {
 
   if (result.marker.readUInt32LE() < 256 || result.type === 0) {
     result.data = 'SKIP';
-  } else if (result.marker.equals(WEIRD_OUTBACK_TYCOON_MARKER)) {
-    // Not sure what this is at the end of outback tycoon files, just quit processing at this point
-    result.data = 'UNKNOWN DATA AT END OF OUTBACK';
-    state.pos = buffer.length;
   } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
     // compressed data, skip for now...
     result.data = 'UNKNOWN COMPRESSED DATA';
     state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
+    state.readCompressedData = true;
   } else {
     switch (result.type) {
       case DATA_TYPES.BOOLEAN:
@@ -352,7 +348,15 @@ function parseEntry(buffer, state) {
         break;
 
       default:
-        throw new Error('Error parsing at position ' + state.pos + ': ' + JSON.stringify(result));
+        if (state.readCompressedData) {
+          // If we've already read the compressed data we've probably got everything we need
+          // out of the file, if it fails at this point just give up...
+          result.data = 'ERROR PARSING, GIVING UP';
+          state.pos = buffer.length;
+        } else {
+          result.typeBuffer = typeBuffer;
+          throw new Error('Error parsing at position ' + state.pos + ': ' + JSON.stringify(result));
+        }
     }
   }
 
