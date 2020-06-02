@@ -288,3 +288,12 @@ describe('Test decompression', () => {
     }
   });
 });
+
+describe('Apocalypse save', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/apocalypse.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
+
+  it('should have 4 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(4);
+  });
+});

@@ -121,7 +121,7 @@ module.exports.parse = (buffer, options) => {
     }
 
     const info = parseEntry(buffer, state);
-    // console.log(info);
+    // console.log(chunkStart, info);
 
     const tryAddActor = (key, marker) => {
       if (info.marker.equals(marker)) {
@@ -285,80 +285,81 @@ function readState(buffer, state) {
 }
 
 function parseEntry(buffer, state) {
-  const typeBuffer = buffer.slice(state.pos + 4, state.pos + 8);
+  let successfulParse;
+  let result;
 
-  const result = {
-    marker: state.next4,
-    type: typeBuffer.readUInt32LE(),
-  };
+  do {
+    const typeBuffer = buffer.slice(state.pos + 4, state.pos + 8);
 
-  state.pos += 8;
+    result = {
+      marker: state.next4,
+      type: typeBuffer.readUInt32LE(),
+    };
 
-  if (result.marker.readUInt32LE() < 256 || result.type === 0) {
-    result.data = 'SKIP';
-  } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
-    // compressed data, skip for now...
-    result.data = 'UNKNOWN COMPRESSED DATA';
-    state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
-    state.readCompressedData = true;
-  } else {
-    switch (result.type) {
-      case DATA_TYPES.BOOLEAN:
-        result.data = readBoolean(buffer, state);
-        break;
+    state.pos += 8;
 
-      case DATA_TYPES.INTEGER:
-      // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
-      case DATA_TYPES.ARRAY_START:
-        result.data = readInt(buffer, state);
-        break;
+    successfulParse = true;
 
-      case 3:
-        result.data = 'UNKNOWN!';
-        state.pos += 12;
-        break;
+    if (result.marker.readUInt32LE() < 256 || result.type === 0) {
+      result.data = 'SKIP';
+    } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
+      // compressed data, skip for now...
+      result.data = 'UNKNOWN COMPRESSED DATA';
+      state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
+      state.readCompressedData = true;
+    } else {
+      switch (result.type) {
+        case DATA_TYPES.BOOLEAN:
+          result.data = readBoolean(buffer, state);
+          break;
 
-      case 0x15:
-        result.data = 'UNKNOWN!';
+        case DATA_TYPES.INTEGER:
+        // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
+        case DATA_TYPES.ARRAY_START:
+          result.data = readInt(buffer, state);
+          break;
 
-        if (buffer.slice(state.pos, state.pos + 4).equals(new Buffer([0, 0, 0, 0x80]))) {
-          state.pos += 20;
-        } else {
+        case 3:
+          result.data = 'UNKNOWN!';
           state.pos += 12;
-        }
-        break;
+          break;
 
-      case 4:
-      case DATA_TYPES.STRING:
-        result.data = readString(buffer, state);
-        break;
+        case 0x15:
+          result.data = 'UNKNOWN!';
 
-      case DATA_TYPES.UTF_STRING:
-        result.data = readUtfString(buffer, state);
-        break;
+          if (buffer.slice(state.pos, state.pos + 4).equals(new Buffer([0, 0, 0, 0x80]))) {
+            state.pos += 20;
+          } else {
+            state.pos += 12;
+          }
+          break;
 
-      case 0x14:
-      case 0x0D:
-        result.data = 'UNKNOWN!';
-        state.pos += 16;
-        break;
+        case 4:
+        case DATA_TYPES.STRING:
+          result.data = readString(buffer, state);
+          break;
 
-      case 0x0B:
-        result.data = readArray(buffer, state);
-        break;
+        case DATA_TYPES.UTF_STRING:
+          result.data = readUtfString(buffer, state);
+          break;
 
-      default:
-        if (state.readCompressedData) {
-          // If we've already read the compressed data we've probably got everything we need
-          // out of the file, if it fails at this point just give up...
-          result.data = 'ERROR PARSING, GIVING UP';
-          state.pos = buffer.length;
-        } else {
-          result.typeBuffer = typeBuffer;
-          throw new Error('Error parsing at position ' + state.pos + ': ' + JSON.stringify(result));
-        }
+        case 0x14:
+        case 0x0D:
+          result.data = 'UNKNOWN!';
+          state.pos += 16;
+          break;
+
+        case 0x0B:
+          result.data = readArray(buffer, state);
+          break;
+
+        default:
+          successfulParse = false;
+          state.pos -= 7;
+          break;
+      }
     }
-  }
+  } while (!successfulParse);
 
   return result;
 }
@@ -386,7 +387,7 @@ function readString(buffer, state) {
   }
 
   if (result === null) {
-    throw new Error('Error reading string: ' + JSON.stringify(origState));
+    return 'Error reading string: ' + JSON.stringify(origState);
   }
 
   return result;
@@ -402,7 +403,7 @@ function readArray(buffer, state) {
 
   for (let i = 0; i < arrayLen; i++) {
     if (buffer[state.pos] !== 0x0A) {
-      throw new Error('Error reading array: ' + JSON.stringify(origState));
+      return 'Error reading array: ' + JSON.stringify(origState);
     }
 
     state.pos += 16;
@@ -447,7 +448,7 @@ function readUtfString(buffer, state) {
   }
 
   if (result === null) {
-    throw new Error('Error reading string: ' + JSON.stringify(origState));
+    return 'Error reading string: ' + JSON.stringify(origState);
   }
 
   return result;
