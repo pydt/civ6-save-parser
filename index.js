@@ -11,6 +11,7 @@ try {
   useNewBuffer = true;
 }
 
+const loggingEnabled = false;
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
@@ -79,6 +80,12 @@ const DATA_TYPES = {
   ARRAY_START: 0x0A,
 };
 
+function log(message) {
+  if (loggingEnabled) {
+    console.log(message);
+  }
+}
+
 module.exports.DATA_TYPES = DATA_TYPES;
 
 module.exports.parse = (buffer, options) => {
@@ -121,7 +128,7 @@ module.exports.parse = (buffer, options) => {
     }
 
     const info = parseEntry(buffer, state);
-    // console.log(chunkStart, info);
+    log(`${chunkStart}/${chunkStart.toString(16)}: ${JSON.stringify(info)}`);
 
     const tryAddActor = (key, marker) => {
       if (info.marker.equals(marker)) {
@@ -284,7 +291,7 @@ function readState(buffer, state) {
   return state;
 }
 
-function parseEntry(buffer, state) {
+function parseEntry(buffer, state, dontSkip) {
   let successfulParse;
   let result;
 
@@ -300,7 +307,7 @@ function parseEntry(buffer, state) {
 
     successfulParse = true;
 
-    if (result.marker.readUInt32LE() < 256 || result.type === 0) {
+    if (!dontSkip && (result.marker.readUInt32LE() < 256 || result.type === 0)) {
       result.data = 'SKIP';
     } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
       // compressed data, skip for now...
@@ -314,9 +321,10 @@ function parseEntry(buffer, state) {
           break;
 
         case DATA_TYPES.INTEGER:
-        // 0A is an array, but i really only care about getting the length out, which looks like a normal integer
-        case DATA_TYPES.ARRAY_START:
           result.data = readInt(buffer, state);
+          break;
+        case DATA_TYPES.ARRAY_START:
+          result.data = readArray0A(buffer, state);
           break;
 
         case 3:
@@ -350,7 +358,7 @@ function parseEntry(buffer, state) {
           break;
 
         case 0x0B:
-          result.data = readArray(buffer, state);
+          result.data = readArray0B(buffer, state);
           break;
 
         default:
@@ -393,7 +401,34 @@ function readString(buffer, state) {
   return result;
 }
 
-function readArray(buffer, state) {
+function readArray0A(buffer, state) {
+  const result = [];
+
+  state.pos += 8;
+  const arrayLen = buffer.readUInt32LE(state.pos);
+  log('array length ' + arrayLen);
+  state.pos += 4;
+
+  for (let i = 0; i < arrayLen; i++) {
+    const index = buffer.readUInt32LE(state.pos);
+
+    if (index > arrayLen) {
+      // If we can't understand the array format, just return what we parsed for length
+      log('Index outside bounds of array at ' + state.pos.toString(16));
+      return arrayLen;
+    }
+
+    log(`reading array index ${index} at ${state.pos.toString(16)}`);
+
+    state = readState(buffer, state);
+    const info = parseEntry(buffer, state, true);
+    result.push(info.data);
+  }
+
+  return result;
+}
+
+function readArray0B(buffer, state) {
   const origState = _.clone(state);
   const result = [];
 

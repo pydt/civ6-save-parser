@@ -297,3 +297,12 @@ describe('Apocalypse save', () => {
     expect(parsedSimple.CIVS.length).to.equal(4);
   });
 });
+
+describe('Save that was triggering compressed data read', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/JAYAVARMAN VII. 1 4000 v. Chr..Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
+
+  it('should have 8 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(8);
+  });
+});
