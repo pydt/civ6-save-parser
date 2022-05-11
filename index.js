@@ -177,6 +177,8 @@ module.exports.parse = (buffer, options) => {
     const curCiv = _.find(parsed.ACTORS, (actor) => {
       return actor.SLOT_HEADER &&
         actor.SLOT_HEADER.marker.equals(curMarker) &&
+        actor.ACTOR_AI_HUMAN &&
+        actor.ACTOR_AI_HUMAN.data !== 2 &&
         actor.ACTOR_TYPE &&
         actor.ACTOR_TYPE.data === 'CIVILIZATION_LEVEL_FULL_CIV' &&
         actor.ACTOR_NAME;

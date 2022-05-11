@@ -306,3 +306,12 @@ describe('Save that was triggering compressed data read', () => {
     expect(parsedSimple.CIVS.length).to.equal(8);
   });
 });
+
+describe('ignores ACTOR_AI_HUMAN = 2', () => {
+  const buffer = new Buffer(fs.readFileSync('test/saves/civtype2.Civ6Save'));
+  const parsedSimple = civ6.parse(buffer, {simple: true}).parsed;
+
+  it('should have 6 civs', () => {
+    expect(parsedSimple.CIVS.length).to.equal(6);
+  });
+});
