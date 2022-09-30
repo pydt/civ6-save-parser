@@ -66,6 +66,15 @@ describe('Modify Cathy Save', function() {
     expect(data.parsed.CIVS[1].ACTOR_AI_HUMAN.data).to.equal(1);
   });
 
+  it('should be able to change flag that it\'s current player\'s turn', () => {
+    expect(data.parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(true);
+
+    civ6.modifyChunk(data.chunks, data.parsed.CIVS[0].IS_CURRENT_TURN, false);
+    data = civ6.parse(Buffer.concat(data.chunks));
+
+    expect(data.parsed.CIVS[0].IS_CURRENT_TURN.data).to.equal(false);
+  });
+
   /* it('writes the modified save file for debugging purposes', () => {
     fs.writeFileSync('test/saves/modified.Civ6Save', Buffer.concat(data.chunks));
   });*/
