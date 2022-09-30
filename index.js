@@ -251,6 +251,9 @@ function writeValue(marker, type, value) {
     case DATA_TYPES.STRING:
       return writeString(marker, value);
 
+    case DATA_TYPES.BOOLEAN:
+      return writeBoolean(marker, value);
+
     default:
       throw new Error('I don\'t know how to write type ' + type);
   }
@@ -517,6 +520,13 @@ function writeArrayLen(marker, value) {
   valueBuffer.writeUInt32LE(value);
 
   return Buffer.concat([marker, new Buffer([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
+}
+
+function writeBoolean(marker, value) {
+  const valueBuffer = Buffer.alloc(4);
+  valueBuffer.writeUInt32LE(value ? 1 : 0);
+
+  return Buffer.concat([marker, Buffer.from([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function readCompressedData(buffer, state) {
