@@ -8,14 +8,14 @@ const civ6 = require('../index.js');
 
 describe('Modify civtype2 save', function() {
   const buffer = new Buffer(fs.readFileSync('test/saves/civtype2.Civ6Save'));
-  let data = civ6.parse(buffer);
+  const data = civ6.parse(buffer);
 
   it('should be able to add MPH mod', () => {
-    let modid = "619ac86e-d99d-4bf3-b8f0-8c5b8c402176";
-    let modname = "Multiplayer Helper 1.5.1"
-    let saveWithAddedMod = civ6.addMod(buffer, modid, modname);
+    const modid = '619ac86e-d99d-4bf3-b8f0-8c5b8c402176';
+    const modname = 'Multiplayer Helper 1.5.1';
+    const saveWithAddedMod = civ6.addMod(buffer, modid, modname);
 
-    let modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
+    const modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
 
     expect(data.parsed.MOD_BLOCK_1.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_1.data.length - 1);
     expect(data.parsed.MOD_BLOCK_2.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_2.data.length - 1);
@@ -27,10 +27,10 @@ describe('Modify civtype2 save', function() {
 
   it('should be able to add and remove MPH mod', () => {
     const buffer = new Buffer(fs.readFileSync('test/saves/CATHERINE DE MEDICI 1 4000 BC.Civ6Save'));
-    let modid = "619ac86e-d99d-4bf3-b8f0-8c5b8c402176";
-    let modname = "Multiplayer Helper 1.5.1"
-    let saveWithAddedMod = civ6.addMod(buffer, modid, modname);
-    let saveWithoutMod = civ6.deleteMod(Buffer.concat(saveWithAddedMod.chunks), modid);
+    const modid = '619ac86e-d99d-4bf3-b8f0-8c5b8c402176';
+    const modname = 'Multiplayer Helper 1.5.1';
+    const saveWithAddedMod = civ6.addMod(buffer, modid, modname);
+    const saveWithoutMod = civ6.deleteMod(Buffer.concat(saveWithAddedMod.chunks), modid);
     expect(buffer).deep.to.equal(Buffer.concat(saveWithoutMod.chunks));
   });
 });
@@ -40,11 +40,11 @@ describe('Modify Cathy Save', function() {
   let data = civ6.parse(buffer);
 
   it('should be able to add MPH mod', () => {
-    let modid = "619ac86e-d99d-4bf3-b8f0-8c5b8c402176";
-    let modname = "Multiplayer Helper 1.5.1"
-    let saveWithAddedMod = civ6.addMod(buffer, modid, modname);
+    const modid = '619ac86e-d99d-4bf3-b8f0-8c5b8c402176';
+    const modname = 'Multiplayer Helper 1.5.1';
+    const saveWithAddedMod = civ6.addMod(buffer, modid, modname);
 
-    let modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
+    const modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
 
     expect(data.parsed.MOD_BLOCK_1.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_1.data.length - 1);
     expect(data.parsed.MOD_BLOCK_2.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_2.data.length - 1);

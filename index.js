@@ -151,10 +151,9 @@ module.exports.parse = (buffer, options) => {
     } else {
       for (const key in GAME_DATA) {
         if (info.marker.equals(GAME_DATA[key])) {
-          if (parsed[key] != null) {
+          if (!!parsed[key]) {
             parsed[key + '_SECONDARY'] = info;
-          }
-          else {
+          } else {
             parsed[key] = info;
           }
         }
@@ -226,57 +225,57 @@ module.exports.modifyChunk = (chunks, toModify, newValue) => {
 
 module.exports.deleteMod = (buffer, modid) => {
   const result = this.parse(buffer);
-  let mod_block_list = [
+  const modBlockList = [
     result.parsed.MOD_BLOCK_1,
     result.parsed.MOD_BLOCK_2,
     result.parsed.MOD_BLOCK_2_SECONDARY,
     result.parsed.MOD_BLOCK_3,
     result.parsed.MOD_BLOCK_3_SECONDARY,
-    result.parsed.MOD_BLOCK_4
-  ]
-  for (let mod_block of mod_block_list) {
-    if (mod_block == null) {
+    result.parsed.MOD_BLOCK_4,
+  ];
+  for (const modBlock of modBlockList) {
+    if (!modBlock) {
       continue;
     }
-    let chunks = getArray0BElementsInChunks(mod_block.marker.byteOffset + 8, buffer)
+    const chunks = getArray0BElementsInChunks(modBlock.marker.byteOffset + 8, buffer);
     for (let i = 2; i < chunks.length; i++) {
-      let c = chunks[i];
-      let id = getModid(c.slice(24));
-      if (id == modid) {
+      const c = chunks[i];
+      const id = getModid(c.slice(24));
+      if (id === modid) {
         chunks.splice(i, 1);
-        chunks[1] = Buffer.concat([new Buffer([chunks[1][0] - 1]), chunks[1].slice(1)])
+        chunks[1] = Buffer.concat([new Buffer([chunks[1][0] - 1]), chunks[1].slice(1)]);
         break;
       }
     }
-    const modifyingChunkIndex = result.chunks.indexOf(mod_block.chunk);
+    const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
-    result.chunks[modifyingChunkIndex] = Buffer.concat(chunks)
+    result.chunks[modifyingChunkIndex] = Buffer.concat(chunks);
   }
   return result;
-}
+};
 
-module.exports.addMod = (buffer, modid, mod_name) => {
+module.exports.addMod = (buffer, modid, modName) => {
   const result = this.parse(buffer);
-  let mod_block_list = [
+  const modBlockList = [
     result.parsed.MOD_BLOCK_1,
     result.parsed.MOD_BLOCK_2,
     result.parsed.MOD_BLOCK_2_SECONDARY,
     result.parsed.MOD_BLOCK_3,
     result.parsed.MOD_BLOCK_3_SECONDARY,
-    result.parsed.MOD_BLOCK_4
-  ]
-  for (let mod_block of mod_block_list) {
-    if (mod_block == null) {
+    result.parsed.MOD_BLOCK_4,
+  ];
+  for (const modBlock of modBlockList) {
+    if (!modBlock) {
       continue;
     }
-    let chunks = getArray0BElementsInChunks(mod_block.marker.byteOffset + 8, buffer)
-    chunks = addElementToArray0B(chunks, modid, mod_name)
-    const modifyingChunkIndex = result.chunks.indexOf(mod_block.chunk);
+    let chunks = getArray0BElementsInChunks(modBlock.marker.byteOffset + 8, buffer);
+    chunks = addElementToArray0B(chunks, modid, modName);
+    const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
-    result.chunks[modifyingChunkIndex] = Buffer.concat(chunks)
+    result.chunks[modifyingChunkIndex] = Buffer.concat(chunks);
   }
   return result;
-}
+};
 
 module.exports.deleteChunk = (chunks, toDelete) => {
   _.pull(chunks, toDelete.chunk);
@@ -494,15 +493,15 @@ function readArray0A(buffer, state) {
 }
 
 function getModid(chunk) {
-  let state = readState(chunk, null);
-  let str = readString(chunk, state);
+  const state = readState(chunk, null);
+  const str = readString(chunk, state);
   return str;
 }
 
 // returns new chunk and new end position of changed string chunk
 function modifyString(chunk, markerPos, value) {
-  let pos = markerPos + 4   // marker prefix
-  pos += 4          // marker type
+  let pos = markerPos + 4; // marker prefix
+  pos += 4; // marker type
   // Length can be up to 3 bytes, but the 4th byte is a marker?
   const strLenBuf = Buffer.concat([chunk.slice(pos, pos + 3), new Buffer([0])]);
   const strLen = strLenBuf.readUInt32LE(0);
@@ -514,32 +513,31 @@ function modifyString(chunk, markerPos, value) {
   return [chunk, pos + 8 + strLen];
 }
 
-function addElementToArray0B(chunks, modid, mod_name) {
-  chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)])
-  chunks.push(chunks[2])
-  const [addedModid,  modnameChunkStart] = modifyString(chunks[chunks.length - 1], 16, modid)
-  const [addedModname, _] = modifyString(addedModid, modnameChunkStart, mod_name)
-  chunks[chunks.length - 1] = addedModname
+function addElementToArray0B(chunks, modid, modName) {
+  chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)]);
+  chunks.push(chunks[2]);
+  const [addedModid, modnameChunkStart] = modifyString(chunks[chunks.length - 1], 16, modid);
+  const [addedModname] = modifyString(addedModid, modnameChunkStart, modName);
+  chunks[chunks.length - 1] = addedModname;
   return chunks;
 }
 
 function getArray0BElementsInChunks(chunkStart, buffer) {
   const chunks = [];
   let currPos = chunkStart;
-  let state = readState(buffer, null)
+  let state = readState(buffer, null);
   state.pos = chunkStart;
 
   currPos += 8;
   chunks.push(buffer.slice(chunkStart, currPos));
   chunkStart = currPos;
-  
+
   const arrayLen = buffer.readUInt32LE(currPos);
   currPos += 4;
   chunks.push(buffer.slice(chunkStart, currPos));
   chunkStart = currPos;
 
   for (let i = 0; i < arrayLen; i++) {
-
     currPos += 16;
     state.pos = currPos;
     let info;
