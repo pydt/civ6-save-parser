@@ -224,6 +224,37 @@ module.exports.modifyChunk = (chunks, toModify, newValue) => {
   chunks[chunkIndex] = toModify.chunk = writeValue(toModify.marker, toModify.type, newValue);
 };
 
+module.exports.deleteMod = (buffer, modid) => {
+  const result = this.parse(buffer);
+  let mod_block_list = [
+    result.parsed.MOD_BLOCK_1,
+    result.parsed.MOD_BLOCK_2,
+    result.parsed.MOD_BLOCK_2_SECONDARY,
+    result.parsed.MOD_BLOCK_3,
+    result.parsed.MOD_BLOCK_3_SECONDARY,
+    result.parsed.MOD_BLOCK_4
+  ]
+  for (let mod_block of mod_block_list) {
+    if (mod_block == null) {
+      continue;
+    }
+    let chunks = getArray0BElementsInChunks(mod_block.marker.byteOffset + 8, buffer)
+    for (let i = 2; i < chunks.length; i++) {
+      let c = chunks[i];
+      let id = getModid(c.slice(24));
+      if (id == modid) {
+        chunks.splice(i, 1);
+        chunks[1] = Buffer.concat([new Buffer([chunks[1][0] - 1]), chunks[1].slice(1)])
+        break;
+      }
+    }
+    const modifyingChunkIndex = result.chunks.indexOf(mod_block.chunk);
+    chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
+    result.chunks[modifyingChunkIndex] = Buffer.concat(chunks)
+  }
+  return result;
+}
+
 module.exports.addMod = (buffer, modid, mod_name) => {
   const result = this.parse(buffer);
   let mod_block_list = [
@@ -462,6 +493,12 @@ function readArray0A(buffer, state) {
   return result;
 }
 
+function getModid(chunk) {
+  let state = readState(chunk, null);
+  let str = readString(chunk, state);
+  return str;
+}
+
 // returns new chunk and new end position of changed string chunk
 function modifyString(chunk, markerPos, value) {
   let pos = markerPos + 4   // marker prefix
@@ -478,7 +515,7 @@ function modifyString(chunk, markerPos, value) {
 }
 
 function addElementToArray0B(chunks, modid, mod_name) {
-  chunks[1][0]++;
+  chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)])
   chunks.push(chunks[2])
   const [addedModid,  modnameChunkStart] = modifyString(chunks[chunks.length - 1], 16, modid)
   const [addedModname, _] = modifyString(addedModid, modnameChunkStart, mod_name)
