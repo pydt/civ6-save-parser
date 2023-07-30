@@ -237,7 +237,7 @@ module.exports.deleteMod = (buffer, modid) => {
     if (!modBlock) {
       continue;
     }
-    const chunks = getArray0BElementsInChunks(modBlock.marker.byteOffset + 8, buffer);
+    const chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
     for (let i = 2; i < chunks.length; i++) {
       const c = chunks[i];
       const id = getModid(c.slice(24));
@@ -268,7 +268,7 @@ module.exports.addMod = (buffer, modid, modName) => {
     if (!modBlock) {
       continue;
     }
-    let chunks = getArray0BElementsInChunks(modBlock.marker.byteOffset + 8, buffer);
+    let chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
     chunks = addElementToArray0B(chunks, modid, modName);
     const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
@@ -422,7 +422,7 @@ function parseEntry(buffer, state, dontSkip) {
           break;
 
         case 0x0B:
-          result.data = readArray0B(buffer, state);
+          result.data = readArray0B(buffer, state).data;
           break;
 
         default:
@@ -522,44 +522,18 @@ function addElementToArray0B(chunks, modid, modName) {
   return chunks;
 }
 
-function getArray0BElementsInChunks(chunkStart, buffer) {
-  const chunks = [];
-  let currPos = chunkStart;
-  let state = readState(buffer, null);
-  state.pos = chunkStart;
-
-  currPos += 8;
-  chunks.push(buffer.slice(chunkStart, currPos));
-  chunkStart = currPos;
-
-  const arrayLen = buffer.readUInt32LE(currPos);
-  currPos += 4;
-  chunks.push(buffer.slice(chunkStart, currPos));
-  chunkStart = currPos;
-
-  for (let i = 0; i < arrayLen; i++) {
-    currPos += 16;
-    state.pos = currPos;
-    let info;
-
-    do {
-      state = readState(buffer, state);
-      info = parseEntry(buffer, state);
-    } while (info.data !== '1');
-    currPos = state.pos;
-    chunks.push(buffer.slice(chunkStart, currPos));
-    chunkStart = currPos;
-  }
-
-  return chunks;
-}
-
 function readArray0B(buffer, state) {
   const origState = _.clone(state);
-  const result = [];
+  const result = {
+    data: [],
+    chunks: [],
+  };
 
+  result.chunks.push(buffer.slice(state.pos, state.pos + 8));
   state.pos += 8;
   const arrayLen = buffer.readUInt32LE(state.pos);
+
+  result.chunks.push(buffer.slice(state.pos, state.pos + 4));
   state.pos += 4;
 
   for (let i = 0; i < arrayLen; i++) {
@@ -567,9 +541,10 @@ function readArray0B(buffer, state) {
       return 'Error reading array: ' + JSON.stringify(origState);
     }
 
+    const startPos = state.pos;
     state.pos += 16;
     const curData = {};
-    result.push(curData);
+    result.data.push(curData);
     let info;
 
     do {
@@ -582,6 +557,8 @@ function readArray0B(buffer, state) {
         }
       }
     } while (info.data !== '1');
+
+    result.chunks.push(buffer.slice(startPos, state.pos));
   }
 
   return result;
