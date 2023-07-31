@@ -17,7 +17,9 @@ describe('Modify civtype2 save', function() {
 
     const modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
 
+    expect(data.parsed.MOD_BLOCK_1.data.some((x) => x.MOD_ID.data === '619ac86e-d99d-4bf3-b8f0-8c5b8c402176')).to.equal(false);
     expect(data.parsed.MOD_BLOCK_1.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_1.data.length - 1);
+    expect(modifiedData.parsed.MOD_BLOCK_1.data.some((x) => x.MOD_ID.data === '619ac86e-d99d-4bf3-b8f0-8c5b8c402176')).to.equal(true);
     expect(data.parsed.MOD_BLOCK_2.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_2.data.length - 1);
     expect(data.parsed.MOD_BLOCK_2_SECONDARY.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_2_SECONDARY.data.length - 1);
     expect(data.parsed.MOD_BLOCK_3.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_3.data.length - 1);
@@ -46,7 +48,9 @@ describe('Modify Cathy Save', function() {
 
     const modifiedData = civ6.parse(Buffer.concat(saveWithAddedMod.chunks));
 
+    expect(data.parsed.MOD_BLOCK_1.data.some((x) => x.MOD_ID.data === '619ac86e-d99d-4bf3-b8f0-8c5b8c402176')).to.equal(false);
     expect(data.parsed.MOD_BLOCK_1.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_1.data.length - 1);
+    expect(modifiedData.parsed.MOD_BLOCK_1.data.some((x) => x.MOD_ID.data === '619ac86e-d99d-4bf3-b8f0-8c5b8c402176')).to.equal(true);
     expect(data.parsed.MOD_BLOCK_2.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_2.data.length - 1);
     expect(data.parsed.MOD_BLOCK_3.data.length).to.equal(modifiedData.parsed.MOD_BLOCK_3.data.length - 1);
   });

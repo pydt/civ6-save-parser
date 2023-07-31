@@ -240,7 +240,8 @@ module.exports.deleteMod = (buffer, modid) => {
     const chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
     for (let i = 2; i < chunks.length; i++) {
       const c = chunks[i];
-      const id = getModid(c.slice(24));
+      const state = readState(c.slice(24), null);
+      const id = readString(c.slice(24), state);
       if (id === modid) {
         chunks.splice(i, 1);
         chunks[1] = Buffer.concat([new Buffer([chunks[1][0] - 1]), chunks[1].slice(1)]);
@@ -254,7 +255,7 @@ module.exports.deleteMod = (buffer, modid) => {
   return result;
 };
 
-module.exports.addMod = (buffer, modid, modName) => {
+module.exports.addMod = (buffer, modId, modTitle) => {
   const result = this.parse(buffer);
   const modBlockList = [
     result.parsed.MOD_BLOCK_1,
@@ -269,7 +270,10 @@ module.exports.addMod = (buffer, modid, modName) => {
       continue;
     }
     let chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
-    chunks = addElementToArray0B(chunks, modid, modName);
+    chunks = addElementToArray0B(chunks, [
+      {marker: GAME_DATA.MOD_ID, value: modId},
+      {marker: GAME_DATA.MOD_TITLE, value: modTitle},
+    ]);
     const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
     result.chunks[modifyingChunkIndex] = Buffer.concat(chunks);
@@ -492,33 +496,31 @@ function readArray0A(buffer, state) {
   return result;
 }
 
-function getModid(chunk) {
-  const state = readState(chunk, null);
-  const str = readString(chunk, state);
-  return str;
-}
-
-// returns new chunk and new end position of changed string chunk
-function modifyString(chunk, markerPos, value) {
-  let pos = markerPos + 4; // marker prefix
-  pos += 4; // marker type
-  // Length can be up to 3 bytes, but the 4th byte is a marker?
-  const strLenBuf = Buffer.concat([chunk.slice(pos, pos + 3), new Buffer([0])]);
-  const strLen = strLenBuf.readUInt32LE(0);
-  const safeValue = iconv.encode(diacritics.remove(value), 'ascii');
-  const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
-  strLenBuffer.writeUInt16LE(safeValue.length + 1, 0);
-
-  chunk = Buffer.concat([chunk.slice(0, pos), strLenBuffer, safeValue, new Buffer([0]), chunk.slice(pos + 8 + strLen)]);
-  return [chunk, pos + 8 + strLen];
-}
-
-function addElementToArray0B(chunks, modid, modName) {
+function addElementToArray0B(chunks, markerValues) {
   chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)]);
-  chunks.push(chunks[2]);
-  const [addedModid, modnameChunkStart] = modifyString(chunks[chunks.length - 1], 16, modid);
-  const [addedModname] = modifyString(addedModid, modnameChunkStart, modName);
-  chunks[chunks.length - 1] = addedModname;
+  const cloneChunk = Buffer.from(chunks[2]);
+  const newSubChunks = [];
+
+  let state = readState(cloneChunk, null);
+  let chunkStart = 0;
+
+  while (state) {
+    const entry = parseEntry(cloneChunk, state);
+    entry.chunk = cloneChunk.slice(chunkStart, state.pos);
+    newSubChunks.push(entry.chunk);
+    chunkStart = state.pos;
+
+    for (const {marker, value} of markerValues) {
+      if (entry.marker.equals(marker)) {
+        module.exports.modifyChunk(newSubChunks, entry, value);
+      }
+    }
+
+    state = readState(cloneChunk, state);
+  }
+
+  chunks.push(Buffer.concat(newSubChunks));
+
   return chunks;
 }
 
