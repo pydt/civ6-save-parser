@@ -152,7 +152,16 @@ module.exports.parse = (buffer, options) => {
       for (const key in GAME_DATA) {
         if (info.marker.equals(GAME_DATA[key])) {
           if (!!parsed[key]) {
-            parsed[key + '_SECONDARY'] = info;
+            // Sometimes markers can repeat?  I really don't understand this file format...
+            let suffix = 2;
+            let uniqueKey;
+
+            do {
+              uniqueKey = `${key}_${suffix}`;
+              suffix++;
+            } while (parsed[uniqueKey]);
+
+            parsed[uniqueKey] = info;
           } else {
             parsed[key] = info;
           }
@@ -225,14 +234,11 @@ module.exports.modifyChunk = (chunks, toModify, newValue) => {
 
 module.exports.deleteMod = (buffer, modid) => {
   const result = this.parse(buffer);
-  const modBlockList = [
-    result.parsed.MOD_BLOCK_1,
-    result.parsed.MOD_BLOCK_2,
-    result.parsed.MOD_BLOCK_2_SECONDARY,
-    result.parsed.MOD_BLOCK_3,
-    result.parsed.MOD_BLOCK_3_SECONDARY,
-    result.parsed.MOD_BLOCK_4,
-  ];
+
+  const modBlockList = Object.keys(result.parsed)
+      .filter((x) => x.startsWith('MOD_BLOCK_'))
+      .map((x) => result.parsed[x]);
+
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
@@ -257,14 +263,11 @@ module.exports.deleteMod = (buffer, modid) => {
 
 module.exports.addMod = (buffer, modId, modTitle) => {
   const result = this.parse(buffer);
-  const modBlockList = [
-    result.parsed.MOD_BLOCK_1,
-    result.parsed.MOD_BLOCK_2,
-    result.parsed.MOD_BLOCK_2_SECONDARY,
-    result.parsed.MOD_BLOCK_3,
-    result.parsed.MOD_BLOCK_3_SECONDARY,
-    result.parsed.MOD_BLOCK_4,
-  ];
+
+  const modBlockList = Object.keys(result.parsed)
+      .filter((x) => x.startsWith('MOD_BLOCK_'))
+      .map((x) => result.parsed[x]);
+
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
@@ -497,6 +500,11 @@ function readArray0A(buffer, state) {
 }
 
 function addElementToArray0B(chunks, markerValues) {
+  if (chunks.length < 3) {
+    // (Chunk 0: marker, 1: size, 2: first entry that we copy to make new entry)
+    throw new Error('Array must already have at least one entry!');
+  }
+
   chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)]);
   const cloneChunk = Buffer.from(chunks[2]);
   const newSubChunks = [];
