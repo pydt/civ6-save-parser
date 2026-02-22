@@ -20,49 +20,49 @@ const zlib = require('zlib');
 const iconv = require('iconv-lite');
 const diacritics = require('diacritics');
 
-const START_ACTOR = new Buffer([0x58, 0xBA, 0x7F, 0x4C]);
-const ZLIB_HEADER = new Buffer([0x78, 0x9C]);
-const END_UNCOMPRESSED = new Buffer([0, 0, 1, 0]);
-const COMPRESSED_DATA_END = new Buffer([0, 0, 0xFF, 0xFF]);
+const START_ACTOR = Buffer.from([0x58, 0xBA, 0x7F, 0x4C]);
+const ZLIB_HEADER = Buffer.from([0x78, 0x9C]);
+const END_UNCOMPRESSED = Buffer.from([0, 0, 1, 0]);
+const COMPRESSED_DATA_END = Buffer.from([0, 0, 0xFF, 0xFF]);
 
 const GAME_DATA = {
-  GAME_TURN: new Buffer([0x9D, 0x2C, 0xE6, 0xBD]),
-  GAME_SPEED: new Buffer([0x99, 0xB0, 0xD9, 0x05]),
-  MOD_BLOCK_1: new Buffer([0x5C, 0xAE, 0x27, 0x84]),
-  MOD_BLOCK_2: new Buffer([0xC8, 0xD1, 0x8C, 0x1B]),
-  MOD_BLOCK_3: new Buffer([0x44, 0x7F, 0xD4, 0xFE]),
-  MOD_BLOCK_4: new Buffer([0xBB, 0x5E, 0x30, 0x88]),
-  MOD_ID: new Buffer([0x54, 0x5F, 0xC4, 0x04]),
-  MOD_TITLE: new Buffer([0x72, 0xE1, 0x34, 0x30]),
-  MAP_FILE: new Buffer([0x5A, 0x87, 0xD8, 0x63]),
-  MAP_SIZE: new Buffer([0x40, 0x5C, 0x83, 0x0B]),
+  GAME_TURN: Buffer.from([0x9D, 0x2C, 0xE6, 0xBD]),
+  GAME_SPEED: Buffer.from([0x99, 0xB0, 0xD9, 0x05]),
+  MOD_BLOCK_1: Buffer.from([0x5C, 0xAE, 0x27, 0x84]),
+  MOD_BLOCK_2: Buffer.from([0xC8, 0xD1, 0x8C, 0x1B]),
+  MOD_BLOCK_3: Buffer.from([0x44, 0x7F, 0xD4, 0xFE]),
+  MOD_BLOCK_4: Buffer.from([0xBB, 0x5E, 0x30, 0x88]),
+  MOD_ID: Buffer.from([0x54, 0x5F, 0xC4, 0x04]),
+  MOD_TITLE: Buffer.from([0x72, 0xE1, 0x34, 0x30]),
+  MAP_FILE: Buffer.from([0x5A, 0x87, 0xD8, 0x63]),
+  MAP_SIZE: Buffer.from([0x40, 0x5C, 0x83, 0x0B]),
 };
 
 const SLOT_HEADERS = [
-  new Buffer([0xC8, 0x9B, 0x5F, 0x65]),
-  new Buffer([0x5E, 0xAB, 0x58, 0x12]),
-  new Buffer([0xE4, 0xFA, 0x51, 0x8B]),
-  new Buffer([0x72, 0xCA, 0x56, 0xFC]),
-  new Buffer([0xD1, 0x5F, 0x32, 0x62]),
-  new Buffer([0x47, 0x6F, 0x35, 0x15]),
-  new Buffer([0xFD, 0x3E, 0x3C, 0x8C]),
-  new Buffer([0x6B, 0x0E, 0x3B, 0xFB]),
-  new Buffer([0xFA, 0x13, 0x84, 0x6B]),
-  new Buffer([0x6C, 0x23, 0x83, 0x1C]),
-  new Buffer([0xF4, 0x14, 0x18, 0xAA]),
-  new Buffer([0x62, 0x24, 0x1F, 0xDD]),
+  Buffer.from([0xC8, 0x9B, 0x5F, 0x65]),
+  Buffer.from([0x5E, 0xAB, 0x58, 0x12]),
+  Buffer.from([0xE4, 0xFA, 0x51, 0x8B]),
+  Buffer.from([0x72, 0xCA, 0x56, 0xFC]),
+  Buffer.from([0xD1, 0x5F, 0x32, 0x62]),
+  Buffer.from([0x47, 0x6F, 0x35, 0x15]),
+  Buffer.from([0xFD, 0x3E, 0x3C, 0x8C]),
+  Buffer.from([0x6B, 0x0E, 0x3B, 0xFB]),
+  Buffer.from([0xFA, 0x13, 0x84, 0x6B]),
+  Buffer.from([0x6C, 0x23, 0x83, 0x1C]),
+  Buffer.from([0xF4, 0x14, 0x18, 0xAA]),
+  Buffer.from([0x62, 0x24, 0x1F, 0xDD]),
 ];
 
 const ACTOR_DATA = {
-  ACTOR_NAME: new Buffer([0x2F, 0x5C, 0x5E, 0x9D]),
-  LEADER_NAME: new Buffer([0x5F, 0x5E, 0xCD, 0xE8]),
-  ACTOR_TYPE: new Buffer([0xBE, 0xAB, 0x55, 0xCA]),
-  PLAYER_NAME: new Buffer([0xFD, 0x6B, 0xB9, 0xDA]),
-  PLAYER_PASSWORD: new Buffer([0x6C, 0xD1, 0x7C, 0x6E]),
-  PLAYER_ALIVE: new Buffer([0xA6, 0xDF, 0xA7, 0x62]),
-  IS_CURRENT_TURN: new Buffer([0xCB, 0x21, 0xB0, 0x7A]),
-  ACTOR_AI_HUMAN: new Buffer([0x95, 0xB9, 0x42, 0xCE]), // 3 = Human, 1 = AI
-  ACTOR_DESCRIPTION: new Buffer([0x65, 0x19, 0x9B, 0xFF]),
+  ACTOR_NAME: Buffer.from([0x2F, 0x5C, 0x5E, 0x9D]),
+  LEADER_NAME: Buffer.from([0x5F, 0x5E, 0xCD, 0xE8]),
+  ACTOR_TYPE: Buffer.from([0xBE, 0xAB, 0x55, 0xCA]),
+  PLAYER_NAME: Buffer.from([0xFD, 0x6B, 0xB9, 0xDA]),
+  PLAYER_PASSWORD: Buffer.from([0x6C, 0xD1, 0x7C, 0x6E]),
+  PLAYER_ALIVE: Buffer.from([0xA6, 0xDF, 0xA7, 0x62]),
+  IS_CURRENT_TURN: Buffer.from([0xCB, 0x21, 0xB0, 0x7A]),
+  ACTOR_AI_HUMAN: Buffer.from([0x95, 0xB9, 0x42, 0xCE]), // 3 = Human, 1 = AI
+  ACTOR_DESCRIPTION: Buffer.from([0x65, 0x19, 0x9B, 0xFF]),
 };
 
 module.exports.MARKERS = {
@@ -236,21 +236,21 @@ module.exports.deleteMod = (buffer, modid) => {
   const result = this.parse(buffer);
 
   const modBlockList = Object.keys(result.parsed)
-      .filter((x) => x.startsWith('MOD_BLOCK_'))
-      .map((x) => result.parsed[x]);
+    .filter((x) => x.startsWith('MOD_BLOCK_'))
+    .map((x) => result.parsed[x]);
 
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
     }
-    const chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
+    const chunks = readArray0B(buffer, { pos: modBlock.marker.byteOffset + 8 }).chunks;
     for (let i = 2; i < chunks.length; i++) {
       const c = chunks[i];
       const state = readState(c.slice(24), null);
       const id = readString(c.slice(24), state);
       if (id === modid) {
         chunks.splice(i, 1);
-        chunks[1] = Buffer.concat([new Buffer([chunks[1][0] - 1]), chunks[1].slice(1)]);
+        chunks[1] = Buffer.concat([Buffer.from([chunks[1][0] - 1]), chunks[1].slice(1)]);
         break;
       }
     }
@@ -265,17 +265,17 @@ module.exports.addMod = (buffer, modId, modTitle) => {
   const result = this.parse(buffer);
 
   const modBlockList = Object.keys(result.parsed)
-      .filter((x) => x.startsWith('MOD_BLOCK_'))
-      .map((x) => result.parsed[x]);
+    .filter((x) => x.startsWith('MOD_BLOCK_'))
+    .map((x) => result.parsed[x]);
 
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
     }
-    let chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
+    let chunks = readArray0B(buffer, { pos: modBlock.marker.byteOffset + 8 }).chunks;
     chunks = addElementToArray0B(chunks, [
-      {marker: GAME_DATA.MOD_ID, value: modId},
-      {marker: GAME_DATA.MOD_TITLE, value: modTitle},
+      { marker: GAME_DATA.MOD_ID, value: modId },
+      { marker: GAME_DATA.MOD_TITLE, value: modTitle },
     ]);
     const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
@@ -294,7 +294,7 @@ if (!module.parent) {
   if (!argv._.length) {
     console.log('Please pass the filename as the argument to the script.');
   } else {
-    const buffer = new Buffer(fs.readFileSync(argv._[0]));
+    const buffer = Buffer.from(fs.readFileSync(argv._[0]));
     const result = module.exports.parse(buffer, argv);
     console.log(util.inspect(result.parsed, false, null));
 
@@ -332,7 +332,7 @@ function simplify(result) {
     mapFn = _.map;
   }
 
-  return mapFn(result, (i) =>{
+  return mapFn(result, (i) => {
     if (i.data && !_.isObject(i.data)) {
       return i.data;
     }
@@ -406,7 +406,7 @@ function parseEntry(buffer, state, dontSkip) {
         case 0x15:
           result.data = 'UNKNOWN!';
 
-          if (buffer.slice(state.pos, state.pos + 4).equals(new Buffer([0, 0, 0, 0x80]))) {
+          if (buffer.slice(state.pos, state.pos + 4).equals(Buffer.from([0, 0, 0, 0x80]))) {
             state.pos += 20;
           } else {
             state.pos += 12;
@@ -448,12 +448,12 @@ function readString(buffer, state) {
   let result = null;
 
   // Length can be up to 3 bytes, but the 4th byte is a marker?
-  const strLenBuf = Buffer.concat([buffer.slice(state.pos, state.pos + 3), new Buffer([0])]);
+  const strLenBuf = Buffer.concat([buffer.slice(state.pos, state.pos + 3), Buffer.from([0])]);
   const strLen = strLenBuf.readUInt32LE(0);
   state.pos += 2;
 
   const strInfo = buffer.slice(state.pos, state.pos + 6);
-  // new Buffer([0, 0x21, 1, 0, 0, 0]))
+  // Buffer.from([0, 0x21, 1, 0, 0, 0]))
   if (strInfo[1] === 0 || strInfo[1] === 0x20) {
     state.pos += 10;
     result = 'Don\'t know what this kind of string is...';
@@ -505,7 +505,7 @@ function addElementToArray0B(chunks, markerValues) {
     throw new Error('Array must already have at least one entry!');
   }
 
-  chunks[1] = Buffer.concat([new Buffer([chunks[1][0] + 1]), chunks[1].slice(1)]);
+  chunks[1] = Buffer.concat([Buffer.from([chunks[1][0] + 1]), chunks[1].slice(1)]);
   const cloneChunk = Buffer.from(chunks[2]);
   const newSubChunks = [];
 
@@ -518,7 +518,7 @@ function addElementToArray0B(chunks, markerValues) {
     newSubChunks.push(entry.chunk);
     chunkStart = state.pos;
 
-    for (const {marker, value} of markerValues) {
+    for (const { marker, value } of markerValues) {
       if (entry.marker.equals(marker)) {
         module.exports.modifyChunk(newSubChunks, entry, value);
       }
@@ -576,10 +576,10 @@ function readArray0B(buffer, state) {
 
 function writeString(marker, newValue) {
   const safeValue = iconv.encode(diacritics.remove(newValue), 'ascii');
-  const strLenBuffer = new Buffer([0, 0, 0, 0x21, 1, 0, 0, 0]);
+  const strLenBuffer = Buffer.from([0, 0, 0, 0x21, 1, 0, 0, 0]);
   strLenBuffer.writeUInt16LE(safeValue.length + 1, 0);
 
-  return Buffer.concat([marker, new Buffer([5, 0, 0, 0]), strLenBuffer, myBufferFrom(safeValue), new Buffer([0])]);
+  return Buffer.concat([marker, Buffer.from([5, 0, 0, 0]), strLenBuffer, myBufferFrom(safeValue), Buffer.from([0])]);
 }
 
 function readUtfString(buffer, state) {
@@ -589,7 +589,7 @@ function readUtfString(buffer, state) {
   const strLen = buffer.readUInt16LE(state.pos) * 2;
   state.pos += 2;
 
-  if (buffer.slice(state.pos, state.pos + 6).equals(new Buffer([0, 0x21, 2, 0, 0, 0]))) {
+  if (buffer.slice(state.pos, state.pos + 6).equals(Buffer.from([0, 0x21, 2, 0, 0, 0]))) {
     state.pos += 6;
     result = buffer.slice(state.pos, state.pos + strLen - 2).toString('ucs2'); // Ignore null terminator
     state.pos += strLen;
@@ -620,14 +620,14 @@ function writeInt(marker, value) {
   const valueBuffer = Buffer.alloc(4);
   valueBuffer.writeUInt32LE(value);
 
-  return Buffer.concat([marker, new Buffer([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
+  return Buffer.concat([marker, Buffer.from([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function writeArrayLen(marker, value) {
   const valueBuffer = Buffer.alloc(4);
   valueBuffer.writeUInt32LE(value);
 
-  return Buffer.concat([marker, new Buffer([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
+  return Buffer.concat([marker, Buffer.from([0x0A, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]), valueBuffer]);
 }
 
 function writeBoolean(marker, value) {
@@ -650,12 +650,12 @@ function readCompressedData(buffer, state) {
   }
   const compressedData = Buffer.concat(chunks);
 
-  return zlib.unzipSync(compressedData, {finishFlush: zlib.Z_SYNC_FLUSH});
+  return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
 }
 
 function myBufferFrom(source) {
   if (useNewBuffer) {
-    return new Buffer(source);
+    return Buffer.from(source);
   }
 
   return Buffer.from(source);
