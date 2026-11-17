@@ -315,3 +315,13 @@ describe('ignores ACTOR_AI_HUMAN = 2', () => {
     expect(parsedSimple.CIVS.length).to.equal(6);
   });
 });
+
+describe('Parse Truncated Save', () => {
+  // Cut off inside a compressed block, so its end marker is missing. This used
+  // to send parsing back to the start of the file and loop forever.
+  const buffer = fs.readFileSync('test/saves/apocalypse.Civ6Save').subarray(0, 3000);
+
+  it('should throw instead of hanging', () => {
+    expect(() => civ6.parse(buffer)).to.throw('Unexpected end of save file');
+  });
+});

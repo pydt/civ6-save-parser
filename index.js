@@ -236,14 +236,14 @@ module.exports.deleteMod = (buffer, modid) => {
   const result = this.parse(buffer);
 
   const modBlockList = Object.keys(result.parsed)
-    .filter((x) => x.startsWith('MOD_BLOCK_'))
-    .map((x) => result.parsed[x]);
+      .filter((x) => x.startsWith('MOD_BLOCK_'))
+      .map((x) => result.parsed[x]);
 
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
     }
-    const chunks = readArray0B(buffer, { pos: modBlock.marker.byteOffset + 8 }).chunks;
+    const chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
     for (let i = 2; i < chunks.length; i++) {
       const c = chunks[i];
       const state = readState(c.slice(24), null);
@@ -265,17 +265,17 @@ module.exports.addMod = (buffer, modId, modTitle) => {
   const result = this.parse(buffer);
 
   const modBlockList = Object.keys(result.parsed)
-    .filter((x) => x.startsWith('MOD_BLOCK_'))
-    .map((x) => result.parsed[x]);
+      .filter((x) => x.startsWith('MOD_BLOCK_'))
+      .map((x) => result.parsed[x]);
 
   for (const modBlock of modBlockList) {
     if (!modBlock) {
       continue;
     }
-    let chunks = readArray0B(buffer, { pos: modBlock.marker.byteOffset + 8 }).chunks;
+    let chunks = readArray0B(buffer, {pos: modBlock.marker.byteOffset + 8}).chunks;
     chunks = addElementToArray0B(chunks, [
-      { marker: GAME_DATA.MOD_ID, value: modId },
-      { marker: GAME_DATA.MOD_TITLE, value: modTitle },
+      {marker: GAME_DATA.MOD_ID, value: modId},
+      {marker: GAME_DATA.MOD_TITLE, value: modTitle},
     ]);
     const modifyingChunkIndex = result.chunks.indexOf(modBlock.chunk);
     chunks.unshift(result.chunks[modifyingChunkIndex].slice(0, 8));
@@ -383,7 +383,7 @@ function parseEntry(buffer, state, dontSkip) {
     } else if (result.type === 0x18 || typeBuffer.slice(0, 2).equals(ZLIB_HEADER)) {
       // compressed data, skip for now...
       result.data = 'UNKNOWN COMPRESSED DATA';
-      state.pos = buffer.indexOf(COMPRESSED_DATA_END, state.pos) + 4;
+      state.pos = findCompressedDataEnd(buffer, state.pos) + 4;
       state.readCompressedData = true;
     } else {
       switch (result.type) {
@@ -518,7 +518,7 @@ function addElementToArray0B(chunks, markerValues) {
     newSubChunks.push(entry.chunk);
     chunkStart = state.pos;
 
-    for (const { marker, value } of markerValues) {
+    for (const {marker, value} of markerValues) {
       if (entry.marker.equals(marker)) {
         module.exports.modifyChunk(newSubChunks, entry, value);
       }
@@ -637,6 +637,18 @@ function writeBoolean(marker, value) {
   return Buffer.concat([marker, Buffer.from([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), valueBuffer]);
 }
 
+function findCompressedDataEnd(buffer, pos) {
+  const end = buffer.indexOf(COMPRESSED_DATA_END, pos);
+
+  if (end === -1) {
+    // Without this, a -1 here sent parsing back to the start of the file and
+    // it looped forever on truncated saves.
+    throw new Error('Unexpected end of save file: compressed data has no end marker.');
+  }
+
+  return end;
+}
+
 function readCompressedData(buffer, state) {
   const data = buffer.slice(state.pos + 4, buffer.indexOf(COMPRESSED_DATA_END, state.pos) + COMPRESSED_DATA_END.length);
 
@@ -650,7 +662,7 @@ function readCompressedData(buffer, state) {
   }
   const compressedData = Buffer.concat(chunks);
 
-  return zlib.unzipSync(compressedData, { finishFlush: zlib.Z_SYNC_FLUSH });
+  return zlib.unzipSync(compressedData, {finishFlush: zlib.Z_SYNC_FLUSH});
 }
 
 function myBufferFrom(source) {
